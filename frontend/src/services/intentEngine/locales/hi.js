@@ -1,0 +1,74 @@
+export default {
+  code: "hi",
+  name: "Hindi",
+  synonyms: {
+    PLUMBING: [
+      "नल", "रिसाव", "पानी", "प्लंबर", "पाइप", "नाली", "टैंक", "टॉयलेट", "लीक",
+      "plumber", "plumbr", "plumer", "tap", "leak", "pipe", "water", "drain",
+      "tap leak", "pipe leak", "paani leak", "nal leak", "plumber chahiye",
+      "plumber aaj chahiye", "plumber milega"
+    ],
+    ELECTRICAL: [
+      "बिजली", "पंखा", "स्विच", "वायरिंग", "लाइट", "करंट", "शॉर्ट सर्किट", "फ्यूज",
+      "इलेक्ट्रीशियन",
+      "electrician", "fan", "spark", "light", "switch", "wire", "power", "shock", "fuse",
+      "fan nahi chal raha", "fan stop ho gaya", "electrician chahiye", "short circuit ho gaya"
+    ],
+    CARPENTRY: [
+      "बढ़ई", "दरवाजा", "लकड़ी", "ताला", "फर्नीचर", "अलमारी", "मेज़",
+      "carpenter", "door", "hinge", "wood", "lock", "furniture", "darwaja",
+      "door lock", "furniture repair"
+    ],
+    PAINTING: [
+      "पेंट", "दीवार", "पेंटर", "रंग", "पुताई",
+      "paint", "wall", "painting", "house paint", "paint karwana hai"
+    ],
+    CLEANING: [
+      "सफाई", "झाड़ू", "पोछा", "धुलाई",
+      "clean", "cleaning", "safai", "deep clean"
+    ],
+    CAREGIVING: [
+      "देखभाल", "बुजुर्ग", "मरीज", "सहायता",
+      "care", "caregiver", "nurse", "elderly", "patient", "dekhbhal"
+    ],
+    GARDENING: [
+      "बागवानी", "पौधे", "पेड़", "घास", "माली",
+      "garden", "gardener", "plant", "lawn", "maali"
+    ],
+    DRIVING: [
+      "ड्राइवर", "गाड़ी", "चालक", "सफर",
+      "driver", "drive", "car", "trip"
+    ],
+    TECHNICIAN: [
+      "एसी", "फ्रीज", "वाशिंग मशीन", "कंप्यूटर",
+      "ac", "fridge", "washing machine", "computer"
+    ]
+  },
+  transliterations: {
+    "ho raha hai": "leaking/happening",
+    "nahi chal raha": "not working",
+    "chahiye": "needed",
+    "bhai": "bro",
+    "yaar": "friend",
+    "aaj": "today",
+    "subah se": "since morning",
+    "ghar pe": "at home",
+    "paani": "water",
+    "nal": "tap"
+  },
+  urgency: {
+    HIGH: ["तुरंत", "आज ही", "इमरजेंसी", "urgent", "asap", "today", "now", "aaj", "aaj hi"],
+    STANDARD: ["कल", "अगले हफ्ते", "tomorrow", "weekend"]
+  },
+  time: {
+    TODAY: ["आज", "अभी", "आज ही", "today", "now", "aaj", "subah se"],
+    TOMORROW: ["कल", "tomorrow", "kal"],
+    WEEKEND: ["वीकेंड", "weekend"]
+  },
+  places: {
+    KITCHEN: ["रसोई", "किचन", "kitchen"],
+    BATHROOM: ["बाथरूम", "शौचालय", "bathroom", "toilet"],
+    BEDROOM: ["कमरा", "बेडरूम", "room", "bedroom"],
+    HALL: ["हॉल", "घर", "ghar pe", "hall"]
+  }
+};

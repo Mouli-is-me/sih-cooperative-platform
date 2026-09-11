@@ -1,0 +1,77 @@
+{
+  "code": "ta",
+  "name": "Tamil",
+  "synonyms": {
+    "PLUMBING": [
+      "குழாய்", "கசிகிறது", "தண்ணீர்", "பிளம்பர்", "பைப்", "சாக்கடை", "அடைப்பு",
+      "க்ளோசட்", "வாஷ்பேசின்", "டேங்க்", "பம்பு",
+      "plumber", "plumbr", "plumer", "tap", "leak", "pipe", "water", "drain", "sink",
+      "tap leak", "pipe leak", "water leak", "tap leak aaguthu", "pipe leak aaguthu",
+      "plumber venum", "plumber irukangala", "nal", "thanni"
+    ],
+    "ELECTRICAL": [
+      "மின்சாரம்", "மின்விசிறி", "ஸ்விட்ச்", "ஒயரிங்", "லைட்", "கரண்ட்",
+      "ஷாக்", "பியூஸ்", "ஸ்பார்க்", "எலக்ட்ரீஷியன்",
+      "electrician", "fan", "spark", "light", "switch", "wire", "power", "shock", "fuse",
+      "fan work aagala", "fan suthala", "current problem", "electrician venum",
+      "electrician chahiye", "fan on pannina"
+    ],
+    "CARPENTRY": [
+      "தச்சர்", "கதவு", "மரம்", "பூட்டு", "மர சாமான்கள்", "அலமாரி", "மேஜை",
+      "carpenter", "door", "hinge", "wood", "lock", "furniture", "kadhavu",
+      "door lock", "thachar", "woodwork"
+    ],
+    "PAINTING": [
+      "பெயிண்ட்", "சுவர்", "ஈரம்", "வண்ணம்", "பெயிண்டர்",
+      "paint", "wall", "painting", "house paint", "paint panna", "aal venum"
+    ],
+    "CLEANING": [
+      "சுத்தம்", "கழுவ", "துடைக்க", "சுத்தம் செய்ய",
+      "clean", "cleaning", "clean panna", "sweep", "mop"
+    ],
+    "CAREGIVING": [
+      "முதியோர்", "பராமரிப்பு", "நோயாளி", "மருத்துவ உதவி",
+      "care", "caregiver", "nurse", "elderly", "patient", "muthiyor"
+    ],
+    "GARDENING": [
+      "தோட்டம்", "செடி", "மரம்", "புல்", "தோட்டக்காரர்",
+      "garden", "gardener", "plant", "lawn", "thottam"
+    ],
+    "DRIVING": [
+      "டிரைவர்", "வாகனம்", "காரோட்டி", "பயணம்",
+      "driver", "drive", "car", "trip"
+    ],
+    "TECHNICIAN": [
+      "ஏசி", "பிரிட்ஜ்", "வாஷிங் மெஷின்", "கணினி",
+      "ac", "fridge", "washing machine", "computer"
+    ]
+  },
+  "transliterations": {
+    "aaguthu": "leaking/happening",
+    "suthala": "not spinning/working",
+    "work aagala": "not working",
+    "venum": "needed",
+    "irukangala": "available?",
+    "inniku": "today",
+    "innike": "today itself",
+    "kalaiyila": "since morning",
+    "veetla": "at home",
+    "kadhavu": "door",
+    "thanni": "water"
+  },
+  "urgency": {
+    "HIGH": ["உடனடியாக", "இன்றே", "இப்பவே", "அவசரம்", "urgent", "asap", "today", "now", "inniku", "innike"],
+    "STANDARD": ["நாளை", "அடுத்த வாரம்", "tomorrow", "weekend"]
+  },
+  "time": {
+    "TODAY": ["இன்றே", "இன்று", "today", "now", "inniku", "innike", "kalaiyila"],
+    "TOMORROW": ["நாளை", "tomorrow", "naalai"],
+    "WEEKEND": ["வார இறுதி", "weekend"]
+  },
+  "places": {
+    "KITCHEN": ["சமையலறை", "கிச்சன்", "kitchen"],
+    "BATHROOM": ["குளியலறை", "பாத்ரூம்", "bathroom", "toilet"],
+    "BEDROOM": ["படுக்கையறை", "அறை", "room", "bedroom"],
+    "HALL": ["ஹால்", "வீடு", "veetla", "hall"]
+  }
+}
