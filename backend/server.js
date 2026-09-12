@@ -26,7 +26,7 @@ app.use(
   helmet({
     contentSecurityPolicy: false, // Avoid breaking frontend dev assets in development
     crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
+  }),
 );
 
 // Rate Limiter
@@ -35,7 +35,10 @@ const apiLimiter = rateLimit({
   max: 300, // max 300 requests per IP per 15 minutes
   message: {
     success: false,
-    error: { code: "TOO_MANY_REQUESTS", message: "Too many requests, please try again later." },
+    error: {
+      code: "TOO_MANY_REQUESTS",
+      message: "Too many requests, please try again later.",
+    },
   },
 });
 app.use("/api/", apiLimiter);
@@ -53,21 +56,27 @@ app.use(
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
-      
+
       const cleanOrigin = origin.replace(/\/+$/, "");
       const isVercelDomain = cleanOrigin.endsWith(".vercel.app");
-      const isAllowed = allowedOrigins.some((o) => o && cleanOrigin === o.replace(/\/+$/, ""));
+      const isAllowed = allowedOrigins.some(
+        (o) => o && cleanOrigin === o.replace(/\/+$/, ""),
+      );
 
-      if (isAllowed || isVercelDomain || process.env.NODE_ENV !== "production") {
+      if (
+        isAllowed ||
+        isVercelDomain ||
+        process.env.NODE_ENV !== "production"
+      ) {
         callback(null, true);
       } else {
-        callback(null, true); // Fallback allow to avoid unexpected CORS blocks on Vercel preview URLs
+        callback(new Error("Origin is not allowed by CORS"));
       }
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  })
+  }),
 );
 
 app.use(express.json({ limit: "2mb" }));
@@ -91,7 +100,8 @@ app.get("/api", (req, res) => {
       auth: "POST /api/auth/login, POST /api/auth/register",
       workers: "GET /api/workers, PATCH /api/workers/:id/status",
       jobs: "GET /api/jobs, POST /api/jobs, POST /api/jobs/:id/apply",
-      requests: "POST /api/service-requests, PATCH /api/service-requests/:id/status",
+      requests:
+        "POST /api/service-requests, PATCH /api/service-requests/:id/status",
       notifications: "GET /api/notifications",
       payments: "GET /api/payments, POST /api/payments",
       attendance: "GET /api/attendance, POST /api/attendance/check-in",
@@ -145,6 +155,8 @@ app.use((err, req, res, next) => {
 // Database Connection & Server Start
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`[CO-OP OS Server] Express server running on http://localhost:${PORT}`);
+    console.log(
+      `[CO-OP OS Server] Express server running on http://localhost:${PORT}`,
+    );
   });
 });

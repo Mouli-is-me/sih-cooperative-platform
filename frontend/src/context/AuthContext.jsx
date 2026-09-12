@@ -1,15 +1,19 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { api } from "../services/api.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("coop_os_user");
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("coop_os_token") || null);
   const [loading, setLoading] = useState(true);
+
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("coop_os_token");
+    localStorage.removeItem("coop_os_user");
+  }, []);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -19,17 +23,27 @@ export function AuthProvider({ children }) {
           const profile = await api.getMe(storedToken);
           if (profile && profile.data) {
             setUser(profile.data);
+            setToken(storedToken);
             localStorage.setItem("coop_os_user", JSON.stringify(profile.data));
+          } else {
+            logout();
           }
         } catch (err) {
-          console.warn("[AuthContext] Session expired, logging out...");
+          console.warn("[AuthContext] Session expired or invalid, logging out.");
           logout();
         }
       }
       setLoading(false);
     };
     initAuth();
-  }, []);
+    
+    // Listen for auth-expired events from api.js
+    const handleAuthExpired = () => {
+      logout();
+    };
+    window.addEventListener("auth-expired", handleAuthExpired);
+    return () => window.removeEventListener("auth-expired", handleAuthExpired);
+  }, [logout]);
 
   const login = async (email, password) => {
     const res = await api.login({ email, password });
@@ -55,15 +69,10 @@ export function AuthProvider({ children }) {
     throw new Error(res.error?.message || "Registration failed");
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("coop_os_token");
-    localStorage.removeItem("coop_os_user");
-  };
+  const isAuthenticated = Boolean(user && token);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

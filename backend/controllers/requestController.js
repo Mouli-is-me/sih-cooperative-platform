@@ -1,13 +1,10 @@
-import ServiceRequest from "../models/ServiceRequest.js";
-import Worker from "../models/Worker.js";
-import mongoose from "mongoose";
 import { rankWorkersFairMatch } from "../services/fairMatchEngine.js";
 import { transitionRequest, STAGES } from "../services/lifecycle.js";
 import {
   createServiceRequestInSupabase,
   updateServiceRequestStatusInSupabase,
   getWorkersFromSupabase,
-  isSupabaseConfigured
+  isSupabaseConfigured,
 } from "../config/supabase.js";
 
 import { SEED_WORKERS } from "../seed/seedWorkers.js";
@@ -39,9 +36,10 @@ export const createServiceRequest = async (req, res) => {
       taskDetail,
       urgency: urgency || "Standard",
       location,
-      customerName: customerName || "Anand Sundaram",
+      customerName: req.user.fullName || customerName || "Customer",
+      customer_id: req.user.id,
       status: STAGES.CREATED,
-      rawText: req.body.rawText || "",
+      raw_text: req.body.rawText || "",
     };
 
     if (customerType && !["Household", "Institution"].includes(customerType)) {
@@ -56,17 +54,22 @@ export const createServiceRequest = async (req, res) => {
     }
 
     if (!saved) {
-      try {
-        const newReq = new ServiceRequest(payload);
-        saved = await newReq.save();
-      } catch (dbErr) {
-        // Database offline fallback
-        saved = {
-          id: `req-${Date.now()}`,
-          ...payload,
-          createdAt: new Date(),
-        };
-      }
+      // Database offline fallback
+      saved = {
+        id: `req-${Date.now()}`,
+        ...payload,
+        createdAt: new Date(),
+      };
+    }
+
+    if (!saved && process.env.NODE_ENV === "production") {
+      return res.status(503).json({
+        success: false,
+        error: {
+          code: "DATABASE_UNAVAILABLE",
+          message: "Service is temporarily unavailable. Please try again.",
+        },
+      });
     }
 
     FALLBACK_REQUESTS.set(normalizeRequestId(saved), saved);
@@ -90,15 +93,7 @@ export const calculateMatchesForIntent = async (req, res) => {
     }
 
     if (!workers || workers.length === 0) {
-      try {
-        workers = await Worker.find();
-      } catch (err) {
-        // Fallback
-      }
-    }
-
-    if (!workers || workers.length === 0) {
-      workers = MOCK_WORKERS;
+      workers = SEED_WORKERS;
     }
 
     const matches = rankWorkersFairMatch(intent, workers).map((entry) => ({
@@ -125,22 +120,24 @@ export const updateRequestStatus = async (req, res) => {
   }
 
   if (isSupabaseConfigured()) {
-    const sbResult = await updateServiceRequestStatusInSupabase(id, status);
+    const sbResult = await updateServiceRequestStatusInSupabase(
+      id,
+      status,
+      req.user.id,
+      req.user.role === "platform_admin",
+    );
     if (sbResult) return res.status(200).json(sbResult);
+    if (process.env.NODE_ENV === "production") {
+      return res.status(404).json({
+        success: false,
+        error: { code: "NOT_FOUND", message: "Service request not found" },
+      });
+    }
   }
 
   try {
-    let requestDoc = null;
-    try {
-      requestDoc = await ServiceRequest.findById(id);
-    } catch (err) {
-      // Fallback mock handling
-    }
-
     const fallbackRequest = FALLBACK_REQUESTS.get(id);
-    const currentReq = requestDoc
-      ? requestDoc.toObject()
-      : fallbackRequest || {
+    const currentReq = fallbackRequest || {
           id,
           status: req.body.currentStatus || STAGES.CREATED,
         };
@@ -151,20 +148,8 @@ export const updateRequestStatus = async (req, res) => {
       return res.status(400).json({ error: transitionResult.error });
     }
 
-    if (requestDoc) {
-      requestDoc.status = status;
-      requestDoc.transitionTimestamps = currentReq.transitionTimestamps;
-      if (
-        assignedWorkerId &&
-        mongoose.Types.ObjectId.isValid(assignedWorkerId)
-      ) {
-        requestDoc.assignedWorkerId = assignedWorkerId;
-      }
-      await requestDoc.save();
-      return res.status(200).json(requestDoc);
-    }
-
     currentReq.id = id;
+    currentReq.status = status;
     if (assignedWorkerId) currentReq.assignedWorkerId = assignedWorkerId;
     FALLBACK_REQUESTS.set(id, currentReq);
     return res.status(200).json(transitionResult.request);
@@ -174,4 +159,3 @@ export const updateRequestStatus = async (req, res) => {
       .json({ error: "Error updating request status", details: err.message });
   }
 };
-

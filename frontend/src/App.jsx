@@ -5,6 +5,7 @@ import {
   Routes,
   Route,
   useNavigate,
+  useLocation,
   useParams,
 } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
@@ -18,16 +19,18 @@ import WorkerDashboardPage from "./pages/WorkerDashboardPage.jsx";
 import CooperativeDashboardPage from "./pages/CooperativeDashboardPage.jsx";
 import BackendDashboardPage from "./pages/BackendDashboardPage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 import { parseServiceIntent } from "./services/intentParser.js";
-import { getFairMatches } from "./services/matching.js";
-import { INITIAL_REQUESTS, WORKERS } from "./services/mockData.js";
 import { api, checkBackendHealth } from "./services/api.js";
 import { getStoredLanguage, setStoredLanguage } from "./services/i18n.js";
-import { AuthProvider } from "./context/AuthContext.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 
 function AppContent() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
 
   // Persistent Language state: 'en' | 'ta' | 'hi'
   const [currentLang, setCurrentLang] = useState(() => getStoredLanguage());
@@ -37,20 +40,40 @@ function AppContent() {
     setCurrentLang(lang);
   };
 
+  const handlePublicIntent = (...args) => {
+    if (!isAuthenticated) {
+      navigate("/signin", { state: { from: { pathname: "/find" } } });
+      return;
+    }
+    return handleStartIntentFlow(...args);
+  };
+
+  const protectedElement = (element, allowedRoles) => (
+    <ProtectedRoute allowedRoles={allowedRoles}>{element}</ProtectedRoute>
+  );
+
   // State management
   const [parsedIntent, setParsedIntent] = useState(() =>
     parseServiceIntent("My kitchen tap is leaking and I need someone today."),
   );
-  const [matches, setMatches] = useState(() =>
-    getFairMatches(parsedIntent, WORKERS),
-  );
-  const [customerRequests, setCustomerRequests] = useState(INITIAL_REQUESTS);
+  const [matches, setMatches] = useState([]);
+  const [customerRequests, setCustomerRequests] = useState([]);
   const [isIntentReady, setIsIntentReady] = useState(true);
+  const [intentError, setIntentError] = useState("");
 
   // Check health of Node.js backend on mount
   useEffect(() => {
     checkBackendHealth();
   }, []);
+
+  // Fetch initial customer requests if customer
+  useEffect(() => {
+    if (isAuthenticated && user?.role === "customer") {
+      // Just a stub for fetching initial requests - ideally use an API endpoint
+      // We will leave it empty to show the empty state for real database workflow
+      setCustomerRequests([]);
+    }
+  }, [isAuthenticated, user]);
 
   // Handle Intent submission flow
   const handleStartIntentFlow = async (
@@ -62,6 +85,7 @@ function AppContent() {
     parsed.customerType = customerType;
     setParsedIntent(parsed);
     setIsIntentReady(false);
+    setIntentError("");
     navigate("/find");
 
     // Create a new ServiceRequest strictly in CREATED status
@@ -72,7 +96,7 @@ function AppContent() {
       urgency: parsed.urgency,
       estimatedDuration: parsed.estimatedDuration,
       location: parsed.location || "K.K. Nagar, Madurai",
-      customerName: "Anand Sundaram",
+      customerName: user ? user.fullName || user.name : "Customer",
       rawText: rawText,
       status: "CREATED",
     };
@@ -84,6 +108,10 @@ function AppContent() {
       ]);
       setMatches(scoredMatches);
       setCustomerRequests((prev) => [newReq, ...prev]);
+    } catch (error) {
+      setIntentError(
+        error.message || "Something went wrong. Please try again.",
+      );
     } finally {
       setIsIntentReady(true);
     }
@@ -98,9 +126,7 @@ function AppContent() {
   // Request Worker Action (Transitions CREATED -> MATCHED -> WORKER_ACCEPTED)
   const handleRequestWorker = async (worker) => {
     // Find active CREATED request or create new
-    const activeReq =
-      customerRequests.find((r) => r.status === "CREATED") ||
-      customerRequests[0];
+    const activeReq = customerRequests.find((r) => r.status === "CREATED");
 
     if (activeReq) {
       // Transition through the backend state machine in order.
@@ -137,7 +163,7 @@ function AppContent() {
           ? parsedIntent.estimatedDuration
           : "45 min",
         location: "K.K. Nagar, Madurai",
-        customerName: "Anand Sundaram",
+        customerName: user ? user.fullName || user.name : "Customer",
         worker: worker,
         status: "WORKER_ACCEPTED",
       };
@@ -189,9 +215,7 @@ function AppContent() {
   // Worker Detail Wrapper for Route
   const WorkerProfileWrapper = () => {
     const { id } = useParams();
-    const [targetWorker, setTargetWorker] = useState(
-      () => WORKERS.find((w) => w.id === id) || WORKERS[0],
-    );
+    const [targetWorker, setTargetWorker] = useState(null);
 
     useEffect(() => {
       let active = true;
@@ -203,6 +227,8 @@ function AppContent() {
         active = false;
       };
     }, [id]);
+
+    if (!targetWorker) return <div style={{ padding: '60px', textAlign: 'center' }}>Loading worker profile...</div>;
 
     return (
       <WorkerProfilePage
@@ -222,54 +248,79 @@ function AppContent() {
       {/* React Router Views */}
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route
+            path="/"
+            element={
+              <HomePage
+                onSubmitIntent={handlePublicIntent}
+                onSelectCategory={(category) =>
+                  handlePublicIntent(category.desc, "Household")
+                }
+                currentLang={currentLang}
+              />
+            }
+          />
 
           <Route
             path="/find"
-            element={
-              <div className="center-processing-wrapper">
-                <IntentProcessing
-                  parsedIntent={parsedIntent}
-                  onCompleteProcessing={handleCompleteProcessing}
-                  isReady={isIntentReady}
-                  currentLang={currentLang}
-                />
-              </div>
-            }
+            element={protectedElement(
+              <>
+                <div className="center-processing-wrapper">
+                  <IntentProcessing
+                    parsedIntent={parsedIntent}
+                    onCompleteProcessing={handleCompleteProcessing}
+                    isReady={isIntentReady}
+                    error={intentError}
+                    currentLang={currentLang}
+                  />
+                </div>
+              </>,
+            )}
           />
 
           <Route
             path="/matches"
-            element={
-              <FairMatchResultsPage
-                intent={parsedIntent}
-                matches={matches}
-                onBack={() => navigate("/")}
-                onRequestWorker={handleRequestWorker}
-                onViewProfile={(w) => navigate(`/worker/${w.id}`)}
-                currentLang={currentLang}
-              />
-            }
+            element={protectedElement(
+              <>
+                <FairMatchResultsPage
+                  intent={parsedIntent}
+                  matches={matches}
+                  onBack={() => navigate("/")}
+                  onRequestWorker={handleRequestWorker}
+                  onViewProfile={(w) => navigate(`/worker/${w.id}`)}
+                  currentLang={currentLang}
+                />
+              </>,
+            )}
           />
 
-          <Route path="/worker/:id" element={<WorkerProfileWrapper />} />
+          <Route
+            path="/worker/:id"
+            element={protectedElement(<WorkerProfileWrapper />)}
+          />
 
           <Route
             path="/customer"
-            element={
-              <CustomerDashboardPage
-                requests={customerRequests}
-                onAdvanceStep={handleAdvanceStep}
-                onNewRequest={() => navigate("/")}
-                onViewWorker={(workerId) => navigate(`/worker/${workerId}`)}
-                currentLang={currentLang}
-              />
-            }
+            element={protectedElement(
+              <>
+                <CustomerDashboardPage
+                  requests={customerRequests}
+                  onAdvanceStep={handleAdvanceStep}
+                  onNewRequest={() => navigate("/")}
+                  onViewWorker={(workerId) => navigate(`/worker/${workerId}`)}
+                  currentLang={currentLang}
+                />
+              </>,
+              ["customer", "platform_admin"],
+            )}
           />
 
           <Route
             path="/worker"
-            element={<WorkerDashboardPage currentLang={currentLang} />}
+            element={protectedElement(
+              <WorkerDashboardPage currentLang={currentLang} />,
+              ["worker", "cooperative_member"],
+            )}
           />
 
           <Route path="/how-it-works" element={<Navigate to="/" replace />} />
@@ -280,12 +331,31 @@ function AppContent() {
 
           <Route
             path="/cooperative"
-            element={<CooperativeDashboardPage currentLang={currentLang} />}
+            element={protectedElement(
+              <CooperativeDashboardPage currentLang={currentLang} />,
+              ["cooperative_admin", "platform_admin"],
+            )}
           />
 
-          <Route path="/backend" element={<BackendDashboardPage />} />
-          <Route path="/login" element={<AuthPage mode="login" />} />
-          <Route path="/worker/signup" element={<AuthPage mode="signup" />} />
+          <Route
+            path="/backend"
+            element={protectedElement(<BackendDashboardPage />, [
+              "platform_admin",
+            ])}
+          />
+          <Route path="/login" element={<Navigate to="/signin" replace />} />
+          <Route path="/signin" element={<AuthPage mode="login" />} />
+          <Route
+            path="/worker/signup"
+            element={<Navigate to="/signup" replace />}
+          />
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route
+            path="*"
+            element={
+              <Navigate to="/" replace />
+            }
+          />
         </Routes>
       </main>
 

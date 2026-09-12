@@ -240,17 +240,18 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.skill_assessments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cooperative_analytics ENABLE ROW LEVEL SECURITY;
 
--- Default Permissive Policies for Application Server
-CREATE POLICY "Allow server access to users" ON public.users FOR ALL USING (true);
-CREATE POLICY "Allow server access to cooperatives" ON public.cooperatives FOR ALL USING (true);
-CREATE POLICY "Allow server access to memberships" ON public.cooperative_memberships FOR ALL USING (true);
-CREATE POLICY "Allow server access to workers" ON public.workers FOR ALL USING (true);
-CREATE POLICY "Allow server access to service_requests" ON public.service_requests FOR ALL USING (true);
-CREATE POLICY "Allow server access to jobs" ON public.jobs FOR ALL USING (true);
-CREATE POLICY "Allow server access to applications" ON public.applications FOR ALL USING (true);
-CREATE POLICY "Allow server access to attendance" ON public.attendance FOR ALL USING (true);
-CREATE POLICY "Allow server access to payments" ON public.payments FOR ALL USING (true);
-CREATE POLICY "Allow server access to notifications" ON public.notifications FOR ALL USING (true);
-CREATE POLICY "Allow server access to audit_logs" ON public.audit_logs FOR ALL USING (true);
-CREATE POLICY "Allow server access to skill_assessments" ON public.skill_assessments FOR ALL USING (true);
-CREATE POLICY "Allow server access to analytics" ON public.cooperative_analytics FOR ALL USING (true);
+-- The Node API is the trusted data boundary and uses the service role key.
+-- Deny direct browser access; service_role bypasses RLS by design.
+CREATE POLICY "Deny direct users access" ON public.users FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct cooperatives access" ON public.cooperatives FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct memberships access" ON public.cooperative_memberships FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct workers access" ON public.workers FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct service requests access" ON public.service_requests FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct jobs access" ON public.jobs FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct applications access" ON public.applications FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct attendance access" ON public.attendance FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct payments access" ON public.payments FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct notifications access" ON public.notifications FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct audit logs access" ON public.audit_logs FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct skill assessments access" ON public.skill_assessments FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);
+CREATE POLICY "Deny direct analytics access" ON public.cooperative_analytics FOR ALL TO anon, authenticated USING (false) WITH CHECK (false);

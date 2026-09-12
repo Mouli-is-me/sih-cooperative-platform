@@ -1,10 +1,9 @@
-import Worker from "../models/Worker.js";
 import { SEED_WORKERS } from "../seed/seedWorkers.js";
 import {
   getWorkersFromSupabase,
   getWorkerByIdFromSupabase,
   updateWorkerStatusInSupabase,
-  isSupabaseConfigured
+  isSupabaseConfigured,
 } from "../config/supabase.js";
 
 // Normalize worker objects for frontend API consistency
@@ -20,8 +19,9 @@ const formatWorker = (w) => {
     workloadCapacity: w.workloadCapacity ?? w.workload_capacity ?? 30,
     isAvailable: w.isAvailable ?? w.is_available ?? true,
     skillFitPercent: w.skillFitPercent ?? w.skill_fit_percent ?? 90,
-    verifiedSkillLevel: w.verifiedSkillLevel ?? w.verified_skill_level ?? "Advanced",
-    practicalVerificationStatus: w.practicalVerificationStatus ?? "UNVERIFIED"
+    verifiedSkillLevel:
+      w.verifiedSkillLevel ?? w.verified_skill_level ?? "Advanced",
+    practicalVerificationStatus: w.practicalVerificationStatus ?? "UNVERIFIED",
   };
 };
 
@@ -78,20 +78,12 @@ export const registerWorker = async (req, res) => {
     verifications: verified
       ? ["Phone Verification Complete", "Skill Assessment Complete"]
       : [],
+    createdAt: new Date(),
   };
-  try {
-    const worker = await new Worker(workerPayload).save();
-    return res
-      .status(201)
-      .json(formatWorker(worker.toObject()));
-  } catch (err) {
-    const fallback = {
-      id: generatedId,
-      ...workerPayload,
-      createdAt: new Date(),
-    };
-    return res.status(201).json(formatWorker(fallback));
-  }
+
+  // We rely on Supabase for the primary DB, so registerWorker should be integrated with auth.
+  // This route handles fallback generation for now.
+  return res.status(201).json(formatWorker(workerPayload));
 };
 
 export const getWorkers = async (req, res) => {
@@ -102,17 +94,6 @@ export const getWorkers = async (req, res) => {
     }
   }
 
-  try {
-    const workers = await Worker.find();
-    if (workers && workers.length > 0) {
-      return res.status(200).json(
-        workers.map((w) => formatWorker(w.toObject()))
-      );
-    }
-  } catch (err) {
-    // Database fallback
-  }
-
   return res.status(200).json(SEED_WORKERS.map(formatWorker));
 };
 
@@ -121,23 +102,20 @@ export const getWorkerById = async (req, res) => {
 
   if (isSupabaseConfigured()) {
     const supabaseWorker = await getWorkerByIdFromSupabase(id);
-    if (supabaseWorker) return res.status(200).json(formatWorker(supabaseWorker));
+    if (supabaseWorker)
+      return res.status(200).json(formatWorker(supabaseWorker));
   }
 
-  try {
-    const worker = await Worker.findOne({ $or: [{ _id: id }, { coopId: id }, { id }] });
-    if (worker) return res.status(200).json(formatWorker(worker.toObject()));
-  } catch (err) {
-    // Fallback
-  }
-
-  const match = SEED_WORKERS.find((w) => w.coopId === id || w.name.toLowerCase().includes(id.toLowerCase()));
-  if (!match) return res.status(404).json({ error: "Worker not found in database" });
+  const match = SEED_WORKERS.find(
+    (w) => w.coopId === id || w.name.toLowerCase().includes(id.toLowerCase()) || w.id === id,
+  );
+  if (!match)
+    return res.status(404).json({ error: "Worker not found in database" });
   return res.status(200).json(formatWorker(match));
 };
 
 /**
- * Worker Status Update API (Hardware / ESP32 / Companion Ready)
+ * Worker Status Update API
  * Endpoint: PATCH /api/workers/:id/status
  * Payload: { status: "AVAILABLE" | "BUSY" | "UNAVAILABLE" }
  */
@@ -161,36 +139,25 @@ export const updateWorkerStatus = async (req, res) => {
       : "Unavailable";
 
   if (isSupabaseConfigured()) {
-    const sbResult = await updateWorkerStatusInSupabase(id, normalizedStatus, isAvailable, availabilityText);
+    const sbResult = await updateWorkerStatusInSupabase(
+      id,
+      normalizedStatus,
+      isAvailable,
+      availabilityText,
+      req.user.id,
+      req.user.role === "platform_admin",
+    );
     if (sbResult) return res.status(200).json(formatWorker(sbResult));
   }
 
-  try {
-    const updated = await Worker.findOneAndUpdate(
-      { $or: [{ _id: id }, { coopId: id }] },
-      {
-        status: normalizedStatus,
-        isAvailable,
-        availability: availabilityText,
-        lastStatusChange: new Date(),
-      },
-      { new: true }
-    );
-
-    if (updated) {
-      return res.status(200).json(formatWorker(updated.toObject()));
-    }
-  } catch (err) {
-    // Fallback
-  }
-
-  const match = SEED_WORKERS.find((w) => w.coopId === id || w.name.toLowerCase().includes(id.toLowerCase()));
+  const match = SEED_WORKERS.find(
+    (w) => w.coopId === id || w.name.toLowerCase().includes(id.toLowerCase()) || w.id === id,
+  );
   if (!match) return res.status(404).json({ error: "Worker not found" });
+  
   match.status = normalizedStatus;
   match.isAvailable = isAvailable;
   match.availability = availabilityText;
 
   return res.status(200).json(formatWorker(match));
 };
-
-

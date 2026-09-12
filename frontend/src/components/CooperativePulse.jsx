@@ -1,85 +1,79 @@
 import React, { useState, useEffect } from "react";
-import { Users, FileText, CheckCircle2, Scale, TrendingUp, AlertTriangle, ShieldCheck, BarChart3, PlusCircle, Check, X, Award, FileCheck } from "lucide-react";
-import { COOPERATIVE_PULSE_METRICS } from "../services/mockData.js";
-import { api, isLiveBackendAvailable } from "../services/api.js";
+import { Users, FileText, CheckCircle2, Scale, TrendingUp, AlertTriangle, ShieldCheck, BarChart3, PlusCircle, Check, X, Award, Briefcase, Plus, Search } from "lucide-react";
+import { api } from "../services/api.js";
 import { getTranslation } from "../services/i18n.js";
-
-const MOCK_PENDING_ASSESSMENTS = [
-  {
-    _id: "assess-seed-01",
-    workerName: "Ramesh Kumar",
-    workerId: "w1",
-    tradeCategory: "Plumbing",
-    scores: { knowledge: 90, tools: 85, procedure: 88, diagnosis: 85, safety: 95, practical: 90 },
-    overallScore: 89,
-    calculatedLevel: "Advanced",
-    status: "SUPERVISOR_REVIEW",
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: "assess-seed-02",
-    workerName: "Senthil Nathan",
-    workerId: "w2",
-    tradeCategory: "Electrical",
-    scores: { knowledge: 80, tools: 80, procedure: 75, diagnosis: 85, safety: 90, practical: 80 },
-    overallScore: 81,
-    calculatedLevel: "Intermediate",
-    status: "SUPERVISOR_REVIEW",
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: "assess-seed-03",
-    workerName: "Anita Devi",
-    workerId: "w6",
-    tradeCategory: "Caregiving",
-    scores: { knowledge: 95, tools: 90, procedure: 95, diagnosis: 90, safety: 100, practical: 95 },
-    overallScore: 94,
-    calculatedLevel: "Advanced",
-    status: "SUPERVISOR_REVIEW",
-    createdAt: new Date().toISOString()
-  }
-];
 
 export default function CooperativePulse({ currentLang }) {
   const t = (key) => getTranslation(currentLang, key);
-  const [pulseData, setPulseData] = useState(COOPERATIVE_PULSE_METRICS);
-  const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("analytics"); // "analytics" | "verification"
+  const [pulseData, setPulseData] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("analytics"); // "analytics" | "jobs" | "verification"
+
+  // Jobs state
+  const [jobs, setJobs] = useState([]);
+  const [showCreateJob, setShowCreateJob] = useState(false);
+  const [newJobForm, setNewJobForm] = useState({
+    title: "",
+    category: "plumbing",
+    location: "Madurai Central",
+    wage: "1500",
+    description: "",
+    requiredSkills: "Leak repair, Pipe fitting"
+  });
+
+  // Assessments state
   const [pendingAssessments, setPendingAssessments] = useState([]);
   const [verifyingId, setVerifyingId] = useState(null);
   const [actionMessage, setActionMessage] = useState("");
   const [supervisorNotes, setSupervisorNotes] = useState({});
 
-  const loadPendingAssessments = async () => {
+  const loadData = async () => {
+    setLoading(true);
     try {
-      const items = await api.getPendingAssessments();
-      if (items && items.length > 0) {
-        setPendingAssessments(items);
-      } else {
-        setPendingAssessments(MOCK_PENDING_ASSESSMENTS);
-      }
-    } catch (err) {
-      setPendingAssessments(MOCK_PENDING_ASSESSMENTS);
+      const [pulse, jobsRes, assessments] = await Promise.all([
+        api.getCooperativePulse(),
+        api.getJobs(),
+        api.getPendingAssessments()
+      ]);
+      if (pulse) setPulseData(pulse);
+      if (jobsRes && jobsRes.data) setJobs(jobsRes.data);
+      if (assessments) setPendingAssessments(assessments);
+    } catch (e) {
+      console.warn("[CooperativePulse] Error loading data:", e);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchPulse = async () => {
-      setLoading(true);
-      const data = await api.getCooperativePulse();
-      if (isMounted && data) {
-        setPulseData(data);
-      }
-      if (isMounted) setLoading(false);
-    };
-
-    fetchPulse();
-    loadPendingAssessments();
-    return () => { isMounted = false; };
+    loadData();
   }, []);
 
-  const handleVerify = async (assessmentId, approved) => {
+  const handleCreateJob = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.createJob({
+        ...newJobForm,
+        wage: Number(newJobForm.wage),
+        requiredSkills: newJobForm.requiredSkills.split(",").map(s => s.trim())
+      });
+      setActionMessage("✓ Work opportunity posted successfully!");
+      setShowCreateJob(false);
+      setNewJobForm({
+        title: "",
+        category: "plumbing",
+        location: "Madurai Central",
+        wage: "1500",
+        description: "",
+        requiredSkills: "Leak repair, Pipe fitting"
+      });
+      loadData();
+    } catch (err) {
+      setActionMessage(`✕ ${err.message}`);
+    } setTimeout(() => setActionMessage(""), 4000);
+  };
+
+  const handleVerifyAssessment = async (assessmentId, approved) => {
     setVerifyingId(assessmentId);
     setActionMessage("");
     const notes = supervisorNotes[assessmentId] || (approved ? "Approved by Cooperative Supervisor Audit" : "Requires Practical Retake");
@@ -104,29 +98,18 @@ export default function CooperativePulse({ currentLang }) {
     activeWorkers = 147,
     openRequests = 326,
     completedJobs = 281,
-    jobsCompletedMonth = 281,
     opportunityBalanceIndex = 84,
     demandTrends = [],
     workforceGaps = [],
-    workloadDistribution = [],
-    opportunityDistribution = []
+    workloadDistribution = []
   } = pulseData;
 
-  const distributionList = workloadDistribution.length > 0
-    ? workloadDistribution
-    : opportunityDistribution.length > 0
-    ? opportunityDistribution
-    : COOPERATIVE_PULSE_METRICS.workloadDistribution;
-
-  const trendsList = demandTrends.length > 0 ? demandTrends : COOPERATIVE_PULSE_METRICS.demandTrends;
-  const gapsList = workforceGaps.length > 0 ? workforceGaps : COOPERATIVE_PULSE_METRICS.workforceGaps;
-
-  const pendingCount = pendingAssessments.filter(a => a.status === "SUPERVISOR_REVIEW").length;
+  const pendingCount = pendingAssessments.filter(a => a.status === "SUPERVISOR_REVIEW" || a.status === "PENDING").length;
 
   return (
     <div className="cooperative-pulse-view">
       {/* Top Section Navigation Tabs */}
-      <div className="coop-nav-tabs" style={{ display: "flex", gap: "12px", marginBottom: "20px", borderBottom: "1px solid #E2E8F0", paddingBottom: "12px" }}>
+      <div className="coop-nav-tabs" style={{ display: "flex", gap: "12px", marginBottom: "24px", borderBottom: "1px solid #E2E8F0", paddingBottom: "12px" }}>
         <button
           onClick={() => setActiveTab("analytics")}
           style={{
@@ -139,11 +122,28 @@ export default function CooperativePulse({ currentLang }) {
             background: activeTab === "analytics" ? "#4F46E5" : "#F1F5F9",
             color: activeTab === "analytics" ? "#FFFFFF" : "#475569",
             fontWeight: 600,
-            cursor: "pointer",
-            transition: "all 0.2s ease"
+            cursor: "pointer"
           }}
         >
-          <BarChart3 size={16} /> Cooperative Analytics & Pulse
+          <BarChart3 size={16} /> Analytics & Equity Pulse
+        </button>
+
+        <button
+          onClick={() => setActiveTab("jobs")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            borderRadius: "8px",
+            border: "none",
+            background: activeTab === "jobs" ? "#4F46E5" : "#F1F5F9",
+            color: activeTab === "jobs" ? "#FFFFFF" : "#475569",
+            fontWeight: 600,
+            cursor: "pointer"
+          }}
+        >
+          <Briefcase size={16} /> Work Opportunities ({jobs.length})
         </button>
 
         <button
@@ -159,14 +159,13 @@ export default function CooperativePulse({ currentLang }) {
             color: activeTab === "verification" ? "#FFFFFF" : "#475569",
             fontWeight: 600,
             cursor: "pointer",
-            transition: "all 0.2s ease",
             position: "relative"
           }}
         >
-          <ShieldCheck size={16} /> Supervisor Verification Center
+          <ShieldCheck size={16} /> Supervisor Verifications
           {pendingCount > 0 && (
             <span style={{
-              background: activeTab === "verification" ? "#EF4444" : "#DC2626",
+              background: "#EF4444",
               color: "#FFFFFF",
               fontSize: "0.75rem",
               padding: "2px 8px",
@@ -185,27 +184,25 @@ export default function CooperativePulse({ currentLang }) {
         </div>
       )}
 
-      {activeTab === "analytics" ? (
+      {/* TAB 1: ANALYTICS */}
+      {activeTab === "analytics" && (
         <>
           <div className="pulse-hero-header">
             <div className="pulse-title-area">
               <div className="pulse-eyebrow">
-                <ShieldCheck size={16} /> {t("coopAnalyticsEyebrow")}
-                <span className="demo-data-badge" style={{ marginLeft: "12px", fontSize: "0.75rem", background: "rgba(255,255,255,0.15)", color: "#818CF8", padding: "3px 10px", borderRadius: "12px", fontWeight: 700 }}>
-                  {isLiveBackendAvailable ? t("liveApiBadge") : t("demoDataBadge")}
-                </span>
+                <ShieldCheck size={16} /> CO-OP FEDERATION OPERATIONS
               </div>
-              <h2>{t("coopOverviewTitle")}</h2>
-              <p>{t("coopPulseDesc")}</p>
+              <h2>Cooperative Roster & Demand Pulse</h2>
+              <p>Operational equity index, regional capacity gaps, and workload distribution metrics.</p>
             </div>
 
             <div className="pulse-index-card">
-              <span className="index-label">{t("opportunityIndexLabel")}</span>
+              <span className="index-label">Opportunity Equity Index</span>
               <div className="index-score-row">
                 <span className="index-score">{opportunityBalanceIndex}</span>
                 <span className="index-total">/100</span>
               </div>
-              <span className="index-status">{t("optimalDistribution")}</span>
+              <span className="index-status">Optimal Fair Distribution</span>
             </div>
           </div>
 
@@ -217,7 +214,7 @@ export default function CooperativePulse({ currentLang }) {
               </div>
               <div className="pm-meta">
                 <span className="pm-val">{activeWorkers}</span>
-                <span className="pm-label">{t("activeVerifiedWorkers")}</span>
+                <span className="pm-label">Active Verified Workers</span>
               </div>
             </div>
 
@@ -227,7 +224,7 @@ export default function CooperativePulse({ currentLang }) {
               </div>
               <div className="pm-meta">
                 <span className="pm-val">{openRequests}</span>
-                <span className="pm-label">{t("monthlyRequests")}</span>
+                <span className="pm-label">Open Service Requests</span>
               </div>
             </div>
 
@@ -236,8 +233,8 @@ export default function CooperativePulse({ currentLang }) {
                 <CheckCircle2 size={20} />
               </div>
               <div className="pm-meta">
-                <span className="pm-val">{completedJobs || jobsCompletedMonth}</span>
-                <span className="pm-label">{t("jobsCompleted")}</span>
+                <span className="pm-val">{completedJobs}</span>
+                <span className="pm-label">Completed Jobs</span>
               </div>
             </div>
 
@@ -247,86 +244,32 @@ export default function CooperativePulse({ currentLang }) {
               </div>
               <div className="pm-meta">
                 <span className="pm-val">{opportunityBalanceIndex}%</span>
-                <span className="pm-label">{t("fairDistributionRate")}</span>
+                <span className="pm-label">Fair Allocation Rate</span>
               </div>
             </div>
           </div>
 
-          {/* Two-Column Analytics Layout */}
-          <div className="pulse-analytics-layout">
-            {/* Demand Trends Section */}
-            <div className="pulse-card">
-              <div className="card-heading">
-                <TrendingUp size={18} className="heading-icon text-indigo" />
-                <h3>{t("demandTrendsTitle")}</h3>
-              </div>
-
-              <div className="trends-list">
-                {trendsList.map((trend, idx) => (
-                  <div key={idx} className="trend-row">
-                    <div className="trend-cat-info">
-                      <span className="cat-name">{trend.category}</span>
-                      <span className="cat-level">{trend.level}</span>
-                    </div>
-                    <div className="trend-bar-track">
-                      <div 
-                        className="trend-bar-fill"
-                        style={{ width: `${60 + idx * 8}%`, backgroundColor: trend.color && trend.color !== "#2E8B57" ? trend.color : "#4F46E5" }}
-                      />
-                    </div>
-                    <span className="trend-growth-badge">{trend.growth}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Opportunity Distribution Section */}
-            <div className="pulse-card">
-              <div className="card-heading">
-                <BarChart3 size={18} className="heading-icon text-indigo" />
-                <h3>{t("workforceOpportunityDistribution")}</h3>
-              </div>
-
-              <div className="distribution-list">
-                {distributionList.map((dist, idx) => (
-                  <div key={idx} className="dist-row">
-                    <div className="dist-meta">
-                      <span className="dist-cohort">{dist.cohort}</span>
-                      <span className="dist-share">{dist.share || dist.top10PctShare}</span>
-                    </div>
-                      <span className="dist-status-chip">{dist.status}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="dist-explanation-box">
-                <Scale size={15} />
-                <span>{t("fairMatchAllocationExplanation")}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Workforce Gaps & Recruitment Recommendations */}
+          {/* Regional Gaps & Recommendations */}
           <div className="pulse-card gaps-section">
             <div className="card-heading">
               <AlertTriangle size={18} className="heading-icon text-amber" />
-              <h3>{t("workforceGapsTitle")}</h3>
+              <h3>Workforce Recruitment Gaps</h3>
             </div>
 
             <div className="gaps-grid">
-              {gapsList.map((gap, idx) => (
+              {workforceGaps.map((gap, idx) => (
                 <div key={idx} className="gap-card">
                   <div className="gap-card-header">
                     <span className="gap-urgency-badge">{gap.urgency}</span>
                     <span className="gap-region">{gap.region}</span>
                   </div>
 
-                  <h4 className="gap-title">{gap.category} {t("capacityNeeded")}</h4>
+                  <h4 className="gap-title">{gap.category} Capacity</h4>
 
                   <div className="gap-recommendation">
                     <PlusCircle size={16} className="text-indigo" />
                     <span>
-                      <strong>+{gap.recommendedRecruits} {t("recruitmentRecommended")}</strong>
+                      <strong>+{gap.recommendedRecruits} Recruits Recommended</strong>
                     </span>
                   </div>
 
@@ -336,141 +279,148 @@ export default function CooperativePulse({ currentLang }) {
             </div>
           </div>
         </>
-      ) : (
-        /* SUPERVISOR VERIFICATION CENTER TAB */
-        <div className="supervisor-verification-section">
-          <div className="pulse-card" style={{ marginBottom: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F1F5F9", paddingBottom: "16px", marginBottom: "20px" }}>
-              <div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#0F172A", display: "flex", alignItems: "center", gap: "8px", margin: 0 }}>
-                  <ShieldCheck className="text-indigo" size={22} /> Supervisor Skill Verification Center
-                </h3>
-                <p style={{ color: "#64748B", fontSize: "0.9rem", marginTop: "4px", margin: 0 }}>
-                  Review 6-category practical skill assessments submitted by trade workers. Validate safety and procedure scores to grant certified Skill Passports.
-                </p>
-              </div>
-              <span style={{ background: "#EEF2FF", color: "#4F46E5", fontWeight: 700, padding: "6px 14px", borderRadius: "20px", fontSize: "0.85rem" }}>
-                {pendingCount} Pending Audits
-              </span>
+      )}
+
+      {/* TAB 2: WORK OPPORTUNITIES (JOBS & CREATION) */}
+      {activeTab === "jobs" && (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <div>
+              <h3 style={{ fontSize: "1.2rem", fontWeight: 700, margin: 0 }}>Active Work Opportunities</h3>
+              <p style={{ color: "#64748B", fontSize: "0.85rem", margin: 0 }}>Create and manage job postings for cooperative workers.</p>
             </div>
+            <button
+              onClick={() => setShowCreateJob(!showCreateJob)}
+              style={{ background: "#4F46E5", color: "#FFFFFF", border: "none", padding: "10px 18px", borderRadius: "8px", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <Plus size={16} /> {showCreateJob ? "Cancel" : "Post Work Opportunity"}
+            </button>
+          </div>
 
-            {pendingAssessments.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748B" }}>
-                <CheckCircle2 size={40} style={{ color: "#10B981", margin: "0 auto 12px" }} />
-                <h4>All Practical Assessments Verified!</h4>
-                <p>There are currently no pending worker skill submissions awaiting supervisor review.</p>
+          {showCreateJob && (
+            <form onSubmit={handleCreateJob} style={{ background: "#FFFFFF", padding: "24px", borderRadius: "12px", border: "1px solid #E2E8F0", marginBottom: "24px" }}>
+              <h4 style={{ margin: "0 0 16px 0", fontWeight: 700 }}>New Work Opportunity Details</h4>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
+                  Job Title *
+                  <input
+                    required
+                    value={newJobForm.title}
+                    onChange={e => setNewJobForm({ ...newJobForm, title: e.target.value })}
+                    placeholder="e.g. Pipeline Installation & Overhaul"
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
+                  Category *
+                  <select
+                    value={newJobForm.category}
+                    onChange={e => setNewJobForm({ ...newJobForm, category: e.target.value })}
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}
+                  >
+                    <option value="plumbing">Plumbing</option>
+                    <option value="electrical">Electrical</option>
+                    <option value="carpentry">Carpentry</option>
+                    <option value="painting">Painting</option>
+                    <option value="cleaning">Cleaning</option>
+                  </select>
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
+                  Location *
+                  <input
+                    required
+                    value={newJobForm.location}
+                    onChange={e => setNewJobForm({ ...newJobForm, location: e.target.value })}
+                    placeholder="e.g. K.K. Nagar, Madurai"
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}
+                  />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", fontWeight: 600 }}>
+                  Wage Amount (₹) *
+                  <input
+                    type="number"
+                    required
+                    value={newJobForm.wage}
+                    onChange={e => setNewJobForm({ ...newJobForm, wage: e.target.value })}
+                    placeholder="1500"
+                    style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}
+                  />
+                </label>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                {pendingAssessments.map((assess) => {
-                  const id = assess._id || assess.id;
-                  const scores = assess.scores || {};
-                  const isPending = assess.status === "SUPERVISOR_REVIEW";
-                  return (
-                    <div key={id} style={{ border: "1px solid #E2E8F0", borderRadius: "12px", padding: "20px", background: "#FFFFFF", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            <h4 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#0F172A", margin: 0 }}>{assess.workerName || "Worker"}</h4>
-                            <span style={{ background: "#E0E7FF", color: "#3730A3", fontSize: "0.75rem", fontWeight: 700, padding: "2px 10px", borderRadius: "12px", textTransform: "uppercase" }}>
-                              {assess.tradeCategory || "Trade"}
-                            </span>
-                          </div>
-                          <span style={{ fontSize: "0.8rem", color: "#64748B", marginTop: "4px", display: "block" }}>
-                            Submitted: {new Date(assess.createdAt || Date.now()).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <div style={{ textAlign: "right" }}>
-                            <span style={{ fontSize: "0.75rem", color: "#64748B", textTransform: "uppercase", fontWeight: 600, display: "block" }}>Weighted Score</span>
-                            <span style={{ fontSize: "1.3rem", fontWeight: 800, color: assess.overallScore >= 80 ? "#10B981" : "#F59E0B" }}>
-                              {assess.overallScore}%
-                            </span>
-                          </div>
-                          <span style={{
-                            padding: "6px 12px",
-                            borderRadius: "8px",
-                            fontWeight: 700,
-                            fontSize: "0.8rem",
-                            background: assess.status === "VERIFIED" ? "#DCFCE7" : assess.status === "REJECTED" ? "#FEE2E2" : "#FEF3C7",
-                            color: assess.status === "VERIFIED" ? "#15803D" : assess.status === "REJECTED" ? "#B91C1C" : "#B45309"
-                          }}>
-                            {assess.status === "VERIFIED" ? "✓ VERIFIED" : assess.status === "REJECTED" ? "✕ RETAKE" : `LEVEL: ${(assess.calculatedLevel || "Basic").toUpperCase()}`}
-                          </span>
-                        </div>
-                      </div>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", fontWeight: 600, marginBottom: "16px" }}>
+                Description *
+                <textarea
+                  required
+                  rows={3}
+                  value={newJobForm.description}
+                  onChange={e => setNewJobForm({ ...newJobForm, description: e.target.value })}
+                  placeholder="Describe scope of work, technical requirements, and completion timeframe..."
+                  style={{ padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1" }}
+                />
+              </label>
 
-                      {/* 6-Category Sub-Scores Grid */}
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "10px", background: "#F8FAFC", padding: "14px", borderRadius: "8px", marginBottom: "16px" }}>
-                        <div>
-                          <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>Knowledge (20%)</span>
-                          <strong style={{ color: "#1E293B", fontSize: "0.95rem" }}>{scores.knowledge ?? 0}%</strong>
-                        </div>
-                        <div>
-                          <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>Tools (15%)</span>
-                          <strong style={{ color: "#1E293B", fontSize: "0.95rem" }}>{scores.tools ?? 0}%</strong>
-                        </div>
-                        <div>
-                          <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>Procedure (20%)</span>
-                          <strong style={{ color: "#1E293B", fontSize: "0.95rem" }}>{scores.procedure ?? 0}%</strong>
-                        </div>
-                        <div>
-                          <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>Diagnosis (20%)</span>
-                          <strong style={{ color: "#1E293B", fontSize: "0.95rem" }}>{scores.diagnosis ?? 0}%</strong>
-                        </div>
-                        <div>
-                          <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>Safety (15%)</span>
-                          <strong style={{ color: scores.safety >= 80 ? "#10B981" : "#EF4444", fontSize: "0.95rem" }}>{scores.safety ?? 0}%</strong>
-                        </div>
-                        <div>
-                          <span style={{ fontSize: "0.75rem", color: "#64748B", display: "block" }}>Practical (10%)</span>
-                          <strong style={{ color: "#1E293B", fontSize: "0.95rem" }}>{scores.practical ?? 0}%</strong>
-                        </div>
-                      </div>
+              <button type="submit" style={{ background: "#10B981", color: "#FFFFFF", border: "none", padding: "10px 20px", borderRadius: "6px", fontWeight: 700, cursor: "pointer" }}>
+                Save & Post Opportunity
+              </button>
+            </form>
+          )}
 
-                      {/* Verification Controls */}
-                      {isPending ? (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                          <input
-                            type="text"
-                            placeholder="Optional supervisor notes / field inspection observations..."
-                            value={supervisorNotes[id] || ""}
-                            onChange={(e) => setSupervisorNotes({ ...supervisorNotes, [id]: e.target.value })}
-                            style={{ width: "100%", padding: "8px 12px", borderRadius: "6px", border: "1px solid #CBD5E1", fontSize: "0.85rem" }}
-                          />
-                          <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-                            <button
-                              disabled={verifyingId === id}
-                              onClick={() => handleVerify(id, false)}
-                              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 16px", borderRadius: "6px", border: "1px solid #FCA5A5", background: "#FEF2F2", color: "#991B1B", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}
-                            >
-                              <X size={15} /> Request Retake
-                            </button>
-                            <button
-                              disabled={verifyingId === id}
-                              onClick={() => handleVerify(id, true)}
-                              style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 18px", borderRadius: "6px", border: "none", background: "#10B981", color: "#FFFFFF", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}
-                            >
-                              <Check size={15} /> Approve & Grant Verified Passport
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: "0.85rem", color: "#475569", fontStyle: "italic", background: "#F1F5F9", padding: "8px 12px", borderRadius: "6px" }}>
-                          Supervisor Notes: {assess.supervisorNotes || "Audit complete."}
-                        </div>
-                      )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {jobs.map(job => (
+              <div key={job.id} style={{ background: "#FFFFFF", padding: "20px", borderRadius: "10px", border: "1px solid #E2E8F0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
+                    <h4 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700 }}>{job.title}</h4>
+                    <span style={{ background: "#EEF2FF", color: "#4F46E5", padding: "2px 8px", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase" }}>
+                      {job.category}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, color: "#64748B", fontSize: "0.85rem" }}>{job.description || job.location}</p>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: "1.2rem", fontWeight: 800, color: "#16A34A", display: "block" }}>₹{job.wage}</span>
+                  <span style={{ background: "#ECFDF5", color: "#047857", padding: "2px 8px", borderRadius: "10px", fontSize: "0.75rem", fontWeight: 700 }}>{job.status || "OPEN"}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: SUPERVISOR VERIFICATIONS */}
+      {activeTab === "verification" && (
+        <div className="supervisor-verification-section">
+          <div className="pulse-card">
+            <h3 style={{ margin: "0 0 16px 0" }}>Practical Skill Verification Center</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {pendingAssessments.map(assess => {
+                const id = assess._id || assess.id;
+                return (
+                  <div key={id} style={{ border: "1px solid #E2E8F0", padding: "16px", borderRadius: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                      <strong>{assess.workerName || "Worker Candidate"} ({assess.tradeCategory})</strong>
+                      <span style={{ fontWeight: 700, color: "#4F46E5" }}>Score: {assess.overallScore || assess.score}%</span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    {assess.status === "SUPERVISOR_REVIEW" || assess.status === "PENDING" ? (
+                      <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                        <button onClick={() => handleVerifyAssessment(id, true)} style={{ background: "#10B981", color: "#FFF", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontWeight: 600 }}>
+                          Approve Skill Passport
+                        </button>
+                        <button onClick={() => handleVerifyAssessment(id, false)} style={{ background: "#EF4444", color: "#FFF", border: "none", padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontWeight: 600 }}>
+                          Request Retake
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ color: "#16A34A", fontWeight: 600, fontSize: "0.85rem" }}>Status: {assess.status}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
-
-

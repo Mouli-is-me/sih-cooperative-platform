@@ -167,17 +167,6 @@ export const WORKERS = [
   }
 ];
 
-export const INITIAL_REQUESTS = [
-  {
-    id: "req-demo-01",
-    customerName: "Anand R.",
-    location: "K.K. Nagar, Madurai",
-    serviceCategory: "plumbing",
-    issueDescription: "Kitchen tap leaking since morning. High water pressure.",
-    urgency: "HIGH",
-    status: "CREATED",
-    createdAt: new Date().toISOString()
-  }
-];
+// INITIAL_REQUESTS removed — service requests are loaded from the database.
 
 

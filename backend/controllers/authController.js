@@ -14,7 +14,16 @@ const sanitizeUser = (user) => {
 
 export const register = async (req, res) => {
   try {
-    const { fullName, email, phone, password, role = "customer", category, experienceYears, cooperative } = req.body;
+    const {
+      fullName,
+      email,
+      phone,
+      password,
+      role = "customer",
+      category,
+      experienceYears,
+      cooperative,
+    } = req.body;
 
     const normalizedEmail = email.toLowerCase().trim();
     const existingUser = await findUserByEmail(normalizedEmail);
@@ -22,7 +31,10 @@ export const register = async (req, res) => {
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        error: { code: "USER_EXISTS", message: "User with this email already exists" },
+        error: {
+          code: "USER_EXISTS",
+          message: "User with this email already exists",
+        },
       });
     }
 
@@ -36,7 +48,7 @@ export const register = async (req, res) => {
       email: normalizedEmail,
       phone,
       password_hash: passwordHash,
-      role,
+      role: role === "worker" ? "worker" : "customer",
       profile_info: {
         category: category || "general",
         experienceYears: Number(experienceYears) || 0,
@@ -50,14 +62,18 @@ export const register = async (req, res) => {
     let savedUser = null;
     if (isSupabaseConfigured()) {
       try {
-        const { data, error } = await supabase.from("users").insert([newUser]).select().single();
+        const { data, error } = await supabase
+          .from("users")
+          .insert([newUser])
+          .select()
+          .single();
         if (!error && data) {
           savedUser = data;
         } else if (error) {
-          console.warn("[Register Warning] Supabase user insert failed:", error.message);
+          console.warn("[Register Warning] Supabase user insert failed");
         }
       } catch (dbErr) {
-        console.warn("[Register Exception]:", dbErr.message);
+        console.warn("[Register Exception]");
       }
     }
 
@@ -84,7 +100,9 @@ export const register = async (req, res) => {
         verified_skill_level: "Verified",
         status: "AVAILABLE",
         is_available: true,
-        skills: [{ name: category || "general", level: "Advanced", confidence: 90 }],
+        skills: [
+          { name: category || "general", level: "Advanced", confidence: 90 },
+        ],
         verifications: ["Phone Verified", "Identity Verified"],
         bio: `Professional ${category || "general"} technician registered on CO-OP OS.`,
       };
@@ -97,9 +115,14 @@ export const register = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: savedUser.id, email: savedUser.email, role: savedUser.role, fullName: savedUser.full_name },
+      {
+        id: savedUser.id,
+        email: savedUser.email,
+        role: savedUser.role,
+        fullName: savedUser.full_name,
+      },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     await logAuditEvent({
@@ -121,7 +144,7 @@ export const register = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      error: { code: "SERVER_ERROR", message: "Failed to register user", details: err.message },
+      error: { code: "SERVER_ERROR", message: "Failed to register user" },
     });
   }
 };
@@ -135,7 +158,10 @@ export const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        error: { code: "INVALID_CREDENTIALS", message: "Invalid email or password" },
+        error: {
+          code: "INVALID_CREDENTIALS",
+          message: "Invalid email or password",
+        },
       });
     }
 
@@ -143,7 +169,10 @@ export const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        error: { code: "INVALID_CREDENTIALS", message: "Invalid email or password" },
+        error: {
+          code: "INVALID_CREDENTIALS",
+          message: "Invalid email or password",
+        },
       });
     }
 
@@ -158,9 +187,14 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, fullName: user.full_name },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.full_name,
+      },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     await logAuditEvent({
@@ -182,7 +216,11 @@ export const login = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      error: { code: "SERVER_ERROR", message: "Failed to log in", details: err.message },
+      error: {
+        code: "SERVER_ERROR",
+        message: "Failed to log in",
+        details: err.message,
+      },
     });
   }
 };
@@ -204,7 +242,10 @@ export const getMe = async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       success: false,
-      error: { code: "SERVER_ERROR", message: "Failed to retrieve user profile" },
+      error: {
+        code: "SERVER_ERROR",
+        message: "Failed to retrieve user profile",
+      },
     });
   }
 };
@@ -213,7 +254,11 @@ export const getMe = async (req, res) => {
 const findUserByEmail = async (email) => {
   if (isSupabaseConfigured()) {
     try {
-      const { data, error } = await supabase.from("users").select("*").eq("email", email).single();
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("email", email)
+        .single();
       if (!error && data) return data;
     } catch (err) {}
   }
@@ -223,7 +268,11 @@ const findUserByEmail = async (email) => {
 const findUserById = async (id) => {
   if (isSupabaseConfigured()) {
     try {
-      const { data, error } = await supabase.from("users").select("*").eq("id", id).single();
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", id)
+        .single();
       if (!error && data) return data;
     } catch (err) {}
   }

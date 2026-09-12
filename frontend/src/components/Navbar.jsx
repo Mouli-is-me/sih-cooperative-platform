@@ -12,11 +12,13 @@ import {
   Server,
 } from "lucide-react";
 import { getTranslation } from "../services/i18n.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Navbar({ currentLang, onChangeLang }) {
   const location = useLocation();
   const currentPath = location.pathname;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
 
   const t = (key) => getTranslation(currentLang, key);
 
@@ -45,41 +47,49 @@ export default function Navbar({ currentLang, onChangeLang }) {
             <span>{t("findWorkerNav")}</span>
           </Link>
 
-          <Link
-            to="/customer"
-            className={`nav-item ${currentPath === "/customer" ? "active" : ""}`}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <Users size={15} />
-            <span>{t("customerPortalNav")}</span>
-          </Link>
+          {isAuthenticated && (user?.role === "customer" || user?.role === "platform_admin") && (
+            <Link
+              to="/customer"
+              className={`nav-item ${currentPath === "/customer" ? "active" : ""}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Users size={15} />
+              <span>{t("customerPortalNav")}</span>
+            </Link>
+          )}
 
-          <Link
-            to="/worker"
-            className={`nav-item ${currentPath === "/worker" ? "active" : ""}`}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <UserCheck size={15} />
-            <span>{t("workerPortalNav")}</span>
-          </Link>
+          {isAuthenticated && (user?.role === "worker" || user?.role === "cooperative_member" || user?.role === "platform_admin") && (
+            <Link
+              to="/worker"
+              className={`nav-item ${currentPath === "/worker" ? "active" : ""}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <UserCheck size={15} />
+              <span>{t("workerPortalNav")}</span>
+            </Link>
+          )}
 
-          <Link
-            to="/cooperative"
-            className={`nav-item ${currentPath === "/cooperative" ? "active" : ""}`}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <Building2 size={15} />
-            <span>{t("coopPulseNav")}</span>
-          </Link>
+          {isAuthenticated && (user?.role === "cooperative_admin" || user?.role === "platform_admin") && (
+            <Link
+              to="/cooperative"
+              className={`nav-item ${currentPath === "/cooperative" ? "active" : ""}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Building2 size={15} />
+              <span>{t("coopPulseNav")}</span>
+            </Link>
+          )}
 
-          <Link
-            to="/backend"
-            className={`nav-item ${currentPath === "/backend" ? "active" : ""}`}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <Server size={15} />
-            <span>Backend Ops</span>
-          </Link>
+          {isAuthenticated && user?.role === "platform_admin" && (
+            <Link
+              to="/backend"
+              className={`nav-item ${currentPath === "/backend" ? "active" : ""}`}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Server size={15} />
+              <span>Backend Ops</span>
+            </Link>
+          )}
         </nav>
 
         {/* Action Buttons & 3-Language Selector */}
@@ -106,9 +116,17 @@ export default function Navbar({ currentLang, onChangeLang }) {
             </button>
           </div>
 
-          <Link to="/login" className="btn-primary-sm">
-            Sign in
-          </Link>
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="btn-secondary-sm">
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <Link to="/signin" className="btn-primary-sm" onClick={() => setMobileMenuOpen(false)}>
+              Sign in
+            </Link>
+          )}
 
           <button
             className="mobile-menu-toggle"

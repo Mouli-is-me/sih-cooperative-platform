@@ -3,14 +3,16 @@ import {
   getWorkers,
   getWorkerById,
   updateWorkerStatus,
-  registerWorker,
 } from "../controllers/workerController.js";
+import { authenticateToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Public: list workers (needed for FairMatch display)
 router.get("/", getWorkers);
-router.post("/register", registerWorker);
+// Public: view single worker profile
 router.get("/:id", getWorkerById);
-router.patch("/:id/status", updateWorkerStatus);
+// Protected: only authenticated users can update worker status
+router.patch("/:id/status", authenticateToken, updateWorkerStatus);
 
 export default router;

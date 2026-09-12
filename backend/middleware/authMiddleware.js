@@ -1,6 +1,16 @@
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 
-const JWT_SECRET = process.env.JWT_SECRET || "sih-coop-os-secure-production-jwt-key-2026";
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error(
+    "[FATAL] JWT_SECRET environment variable is not set. Server cannot start securely.",
+  );
+  process.exit(1);
+}
 
 /**
  * Authenticate JWT Token middleware
@@ -8,7 +18,10 @@ const JWT_SECRET = process.env.JWT_SECRET || "sih-coop-os-secure-production-jwt-
  */
 export const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  const token =
+    authHeader && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
 
   if (!token) {
     return res.status(401).json({
@@ -24,7 +37,10 @@ export const authenticateToken = (req, res, next) => {
   } catch (err) {
     return res.status(403).json({
       success: false,
-      error: { code: "INVALID_TOKEN", message: "Invalid or expired authentication token" },
+      error: {
+        code: "INVALID_TOKEN",
+        message: "Invalid or expired authentication token",
+      },
     });
   }
 };
@@ -42,7 +58,10 @@ export const requireRole = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role) && req.user.role !== "platform_admin") {
+    if (
+      !allowedRoles.includes(req.user.role) &&
+      req.user.role !== "platform_admin"
+    ) {
       return res.status(403).json({
         success: false,
         error: {

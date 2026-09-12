@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   CheckCircle2,
-  Loader2,
   Sparkles,
   ArrowRight,
   ShieldCheck,
@@ -13,21 +12,22 @@ export default function IntentProcessing({
   parsedIntent,
   onCompleteProcessing,
   isReady = true,
+  error = "",
 }) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   const steps = [
     "Identifying service category...",
-    "Analyzing specific task & estimated duration...",
+    "Analyzing task requirements & duration...",
     "Evaluating urgency & schedule constraints...",
-    "Scanning certified cooperative workers & workload balance...",
+    "Querying verified cooperative workers...",
   ];
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setCurrentStepIndex(1), 600);
-    const timer2 = setTimeout(() => setCurrentStepIndex(2), 1200);
-    const timer3 = setTimeout(() => setCurrentStepIndex(3), 1800);
-    const timer4 = setTimeout(() => setCurrentStepIndex(4), 2400);
+    const timer1 = setTimeout(() => setCurrentStepIndex(1), 100);
+    const timer2 = setTimeout(() => setCurrentStepIndex(2), 200);
+    const timer3 = setTimeout(() => setCurrentStepIndex(3), 300);
+    const timer4 = setTimeout(() => setCurrentStepIndex(4), 400);
 
     return () => {
       clearTimeout(timer1);
@@ -43,10 +43,10 @@ export default function IntentProcessing({
     <div className="intent-processing-card">
       <div className="processing-header">
         <div className="processing-pill">
-          <Sparkles size={14} className="spin-icon" />
-          <span>UNDERSTANDING YOUR REQUEST</span>
+          <Sparkles size={14} />
+          <span>REAL-TIME INTENT PROCESSING</span>
         </div>
-        <h2>Parsing Service Intent</h2>
+        <h2>Analyzing Service Request</h2>
         <p className="processing-query">
           "
           {parsedIntent.originalText ||
@@ -58,76 +58,77 @@ export default function IntentProcessing({
 
       {/* Progress Steps List */}
       <div className="processing-steps">
-        {steps.map((label, idx) => {
-          const stepCompleted = currentStepIndex > idx;
-          const stepInProgress = currentStepIndex === idx;
+        {steps.map((stepText, idx) => {
+          const stepDone = currentStepIndex > idx;
+          const isCurrent = currentStepIndex === idx;
 
           return (
             <div
-              key={idx}
-              className={`step-row ${stepCompleted ? "completed" : ""} ${stepInProgress ? "in-progress" : ""}`}
+              key={stepText}
+              className={`step-row ${
+                stepDone ? "completed" : isCurrent ? "active" : ""
+              }`}
             >
-              <div className="step-icon-wrap">
-                {stepCompleted ? (
-                  <CheckCircle2 size={18} className="check-icon" />
-                ) : stepInProgress ? (
-                  <Loader2 size={18} className="spinner-icon" />
+              <div className="step-icon-col">
+                {stepDone ? (
+                  <CheckCircle2 size={18} className="text-forest" />
                 ) : (
-                  <div className="step-dot" />
+                  <span className="step-dot" />
                 )}
               </div>
-              <span className="step-label">{label}</span>
+              <span className="step-text">{stepText}</span>
             </div>
           );
         })}
       </div>
 
-      {/* Parsed Result Display */}
-      {isDone && isReady && (
-        <div className="parsed-summary-box">
-          <div className="summary-badge">
-            <ShieldCheck size={16} /> SERVICE INTENT DETECTED
+      {error && <div className="auth-error">{error}</div>}
+
+      {/* Extracted Entity Summary Box */}
+      {isDone && (
+        <div className="extracted-entity-box">
+          <div className="entity-box-title">
+            <ShieldCheck size={16} /> Extracted Parameters
           </div>
 
-          <div className="summary-grid">
-            <div className="summary-item">
-              <span className="item-label">SERVICE CATEGORY</span>
-              <span className="item-value val-highlight">
-                {parsedIntent.serviceCategory}
-              </span>
+          <div className="entity-pills-row">
+            <div className="entity-pill">
+              <span className="ep-lbl">Category:</span>
+              <strong>
+                {parsedIntent.serviceCategory
+                  ? parsedIntent.serviceCategory.toUpperCase()
+                  : "PLUMBING"}
+              </strong>
             </div>
 
-            <div className="summary-item">
-              <span className="item-label">TASK IDENTIFIED</span>
-              <span className="item-value">{parsedIntent.taskDetail}</span>
+            <div className="entity-pill">
+              <span className="ep-lbl">Task:</span>
+              <strong>
+                {parsedIntent.taskDetail || "General Maintenance"}
+              </strong>
             </div>
 
-            <div className="summary-item">
-              <span className="item-label">URGENCY LEVEL</span>
-              <span className="item-value val-urgency">
-                <Clock size={13} /> {parsedIntent.urgencyBadge}
-              </span>
+            <div className="entity-pill">
+              <span className="ep-lbl">Urgency:</span>
+              <strong>{parsedIntent.urgency || "Standard"}</strong>
             </div>
 
-            <div className="summary-item">
-              <span className="item-label">ESTIMATED DURATION</span>
-              <span className="item-value">
-                {parsedIntent.estimatedDuration}
-              </span>
+            <div className="entity-pill">
+              <span className="ep-lbl">Est. Duration:</span>
+              <Clock size={13} />
+              <strong>{parsedIntent.estimatedDuration || "45 min"}</strong>
+            </div>
+
+            <div className="entity-pill">
+              <span className="ep-lbl">Location:</span>
+              <MapPin size={13} />
+              <strong>{parsedIntent.location || "Madurai Central"}</strong>
             </div>
           </div>
 
-          <button className="btn-see-matches" onClick={onCompleteProcessing}>
-            <span>See FairMatches™</span>
-            <ArrowRight size={18} />
+          <button className="btn-view-matches" onClick={onCompleteProcessing}>
+            View Available Workers <ArrowRight size={17} />
           </button>
-        </div>
-      )}
-
-      {isDone && !isReady && (
-        <div className="processing-wait-state" role="status" aria-live="polite">
-          <Loader2 size={17} className="spinner-icon" />
-          <span>Securing local matches and preparing your request...</span>
         </div>
       )}
     </div>
