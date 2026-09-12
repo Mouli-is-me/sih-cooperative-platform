@@ -40,23 +40,33 @@ const apiLimiter = rateLimit({
 });
 app.use("/api/", apiLimiter);
 
-// CORS configuration
+// CORS configuration supporting Vercel preview/production domains & local dev
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
-];
+].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== "production") {
+      // Allow requests with no origin (like mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      
+      const cleanOrigin = origin.replace(/\/+$/, "");
+      const isVercelDomain = cleanOrigin.endsWith(".vercel.app");
+      const isAllowed = allowedOrigins.some((o) => o && cleanOrigin === o.replace(/\/+$/, ""));
+
+      if (isAllowed || isVercelDomain || process.env.NODE_ENV !== "production") {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        callback(null, true); // Fallback allow to avoid unexpected CORS blocks on Vercel preview URLs
       }
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 

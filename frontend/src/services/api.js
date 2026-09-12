@@ -5,9 +5,10 @@
 import { WORKERS, COOPERATIVE_PULSE_METRICS } from "./mockData.js";
 import { getFairMatches } from "./matching.js";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  (typeof window !== "undefined" && window.location.hostname !== "localhost"
+const rawApiUrl = import.meta.env.VITE_API_BASE_URL || "";
+const API_BASE_URL = rawApiUrl
+  ? (rawApiUrl.endsWith("/api") ? rawApiUrl : `${rawApiUrl.replace(/\/+$/, "")}/api`)
+  : (typeof window !== "undefined" && window.location.hostname !== "localhost"
     ? `${window.location.origin}/api`
     : "http://localhost:5000/api");
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
@@ -75,6 +76,9 @@ export const api = {
       body: JSON.stringify(credentials),
     }, 15000);
     const data = await safeJson(res);
+    if (res.status === 405) {
+      throw new Error("HTTP 405 Method Not Allowed: Check VITE_API_BASE_URL in Vercel environment variables to point to your Render backend.");
+    }
     if (!res.ok) throw new Error(data.error?.message || `Login failed (${res.status})`);
     return data;
   },
@@ -86,6 +90,9 @@ export const api = {
       body: JSON.stringify(userData),
     }, 15000);
     const data = await safeJson(res);
+    if (res.status === 405) {
+      throw new Error("HTTP 405 Method Not Allowed: Check VITE_API_BASE_URL in Vercel environment variables to point to your Render backend.");
+    }
     if (!res.ok) throw new Error(data.error?.message || `Registration failed (${res.status})`);
     return data;
   },
@@ -425,7 +432,7 @@ export const api = {
 
   async verifyAssessment(id, payload = {}) {
     try {
-      const res = await fetchWithTimeout(`${API_BASE_URL}/assessments/${id}/verify`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/assessments/[id]/verify`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
