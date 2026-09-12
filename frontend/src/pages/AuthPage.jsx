@@ -199,6 +199,16 @@ export default function AuthPage({ mode = "login" }) {
     }
   };
 
+  const handleDemoLogin = (role) => {
+    demoLogin(role);
+    setMessage(`Demo mode: ${role}. Redirecting...`);
+    setTimeout(() => {
+      if (role === "worker") navigate("/worker", { replace: true });
+      else if (role === "admin") navigate("/cooperative", { replace: true });
+      else navigate("/customer", { replace: true });
+    }, 500);
+  };
+
   if (!isSignup) {
     return (
       <div className="auth-page">
@@ -218,7 +228,19 @@ export default function AuthPage({ mode = "login" }) {
             <div className="auth-proof">
               <CheckCircle2 size={17} /> FairMatch-backed dispatch
             </div>
+            
+            {/* Demo Mode Box */}
+            <div style={{ marginTop: "40px", padding: "20px", background: "#EEF2FF", borderRadius: "12px", border: "1px solid #C7D2FE" }}>
+              <h3 style={{ fontSize: "14px", color: "#4F46E5", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Presentation Mode</h3>
+              <p style={{ fontSize: "13px", color: "#4338CA", marginBottom: "16px" }}>Bypass standard authentication to quickly open portals for demonstration.</p>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <button type="button" onClick={() => handleDemoLogin("customer")} style={{ flex: 1, padding: "8px 12px", background: "#fff", border: "1px solid #C7D2FE", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#4F46E5", cursor: "pointer" }}>Demo Customer</button>
+                <button type="button" onClick={() => handleDemoLogin("worker")} style={{ flex: 1, padding: "8px 12px", background: "#fff", border: "1px solid #C7D2FE", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#4F46E5", cursor: "pointer" }}>Demo Worker</button>
+                <button type="button" onClick={() => handleDemoLogin("admin")} style={{ flex: 1, padding: "8px 12px", background: "#fff", border: "1px solid #C7D2FE", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#4F46E5", cursor: "pointer" }}>Demo Admin</button>
+              </div>
+            </div>
           </div>
+          
           <form className="auth-card" onSubmit={handleLogin}>
             <div className="auth-card-heading">
               <LockKeyhole size={20} />
@@ -227,13 +249,50 @@ export default function AuthPage({ mode = "login" }) {
                 <h2>Sign in</h2>
               </div>
             </div>
+            
+            <div className="role-selector" style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px', border: form.role === 'customer' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '6px', flex: 1, fontSize: '13px', fontWeight: 600 }}>
+                <input 
+                  type="radio" 
+                  name="loginRole" 
+                  value="customer" 
+                  checked={form.role === "customer"}
+                  onChange={() => update("role", "customer")}
+                  style={{ display: 'none' }}
+                />
+                Customer
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px', border: form.role === 'worker' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '6px', flex: 1, fontSize: '13px', fontWeight: 600 }}>
+                <input 
+                  type="radio" 
+                  name="loginRole" 
+                  value="worker" 
+                  checked={form.role === "worker"}
+                  onChange={() => update("role", "worker")}
+                  style={{ display: 'none' }}
+                />
+                Worker
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px', border: form.role === 'admin' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '6px', flex: 1, fontSize: '13px', fontWeight: 600 }}>
+                <input 
+                  type="radio" 
+                  name="loginRole" 
+                  value="admin" 
+                  checked={form.role === "admin"}
+                  onChange={() => update("role", "admin")}
+                  style={{ display: 'none' }}
+                />
+                Admin
+              </label>
+            </div>
+
             <label>
               Email
               <input
                 type="email"
                 value={form.email}
                 onChange={(event) => update("email", event.target.value)}
-                placeholder="you@example.com"
+                placeholder={`Enter your ${form.role || ''} email`}
                 required
               />
             </label>
@@ -257,12 +316,17 @@ export default function AuthPage({ mode = "login" }) {
               {submitting ? "Signing in..." : "Sign in"}{" "}
               <ArrowRight size={17} />
             </button>
-            <p className="auth-switch">
-              New here?{" "}
-              <button type="button" onClick={() => navigate("/signup")}>
-                Create an account
-              </button>
-            </p>
+            <div className="auth-switch" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <span style={{ fontSize: '13px', color: '#64748B', textAlign: 'center' }}>New to CO-OP OS?</span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" onClick={() => { update("role", "customer"); navigate("/signup"); }} style={{ flex: 1, padding: "10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                  Sign up as Customer
+                </button>
+                <button type="button" onClick={() => { update("role", "worker"); navigate("/signup"); }} style={{ flex: 1, padding: "10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                  Sign up as Worker
+                </button>
+              </div>
+            </div>
           </form>
         </div>
       </div>

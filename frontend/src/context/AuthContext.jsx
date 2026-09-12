@@ -69,10 +69,26 @@ export function AuthProvider({ children }) {
     throw new Error(res.error?.message || "Registration failed");
   };
 
+  const demoLogin = (role) => {
+    const demoUser = {
+      id: `demo-${role}-${Date.now()}`,
+      name: `Demo ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+      fullName: `Demo ${role.charAt(0).toUpperCase() + role.slice(1)}`,
+      email: `${role}@demo.local`,
+      role: role,
+      workerId: role === 'worker' ? 'w1' : undefined // Link to a mock worker
+    };
+    setUser(demoUser);
+    setToken("demo-mode-token");
+    localStorage.setItem("coop_os_token", "demo-mode-token");
+    localStorage.setItem("coop_os_user", JSON.stringify(demoUser));
+    return { user: demoUser, token: "demo-mode-token" };
+  };
+
   const isAuthenticated = Boolean(user && token);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, demoLogin, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );

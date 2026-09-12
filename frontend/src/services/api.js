@@ -44,7 +44,10 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
     const res = await fetch(url, { ...options, signal: controller.signal });
     if (res.status === 401 || res.status === 403) {
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("auth-expired"));
+        const currentToken = localStorage.getItem("coop_os_token");
+        if (currentToken !== "demo-mode-token") {
+          window.dispatchEvent(new Event("auth-expired"));
+        }
       }
     }
     return res;
