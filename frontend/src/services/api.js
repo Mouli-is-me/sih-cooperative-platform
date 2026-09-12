@@ -1,5 +1,5 @@
 // Dual Mode API Service Layer for CO-OP OS
-// Live Mode: Connects to Node.js / Express REST API (http://localhost:5000/api)
+// Live Mode: Connects to Node.js / Express REST API (http://localhost:5000/api or Render backend)
 // Demo Mode: Gracefully falls back to local deterministic mock state if offline.
 
 import { WORKERS, COOPERATIVE_PULSE_METRICS } from "./mockData.js";
@@ -19,11 +19,16 @@ const getAuthHeaders = () => {
     : { "Content-Type": "application/json" };
 };
 
-const fetchWithTimeout = async (url, options = {}, timeoutMs = 3000) => {
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = setTimeout(() => controller.abort("Request Timeout"), timeoutMs);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err) {
+    if (err.name === "AbortError" || String(err).includes("aborted")) {
+      throw new Error("Server request timed out. Please wait a few seconds while the backend server wakes up.");
+    }
+    throw err;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -35,7 +40,7 @@ export let isLiveBackendAvailable = false;
 export const checkBackendHealth = async () => {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const timeoutId = setTimeout(() => controller.abort("Health Check Timeout"), 10000);
     const res = await fetch(`${API_BASE_URL}/health`, {
       method: "GET",
       signal: controller.signal,
@@ -59,7 +64,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
-    });
+    }, 15000);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || "Login failed");
     return data;
@@ -70,7 +75,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userData),
-    });
+    }, 15000);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || "Registration failed");
     return data;
@@ -80,7 +85,7 @@ export const api = {
     const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    });
+    }, 10000);
     if (!res.ok) throw new Error("Failed to fetch profile");
     return await res.json();
   },
@@ -91,7 +96,7 @@ export const api = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...workerData, fullName: workerData.name, role: "worker" }),
-    });
+    }, 15000);
     if (!res.ok) {
       const error = await res.json().catch(() => ({}));
       throw new Error(error.error?.message || `Worker registration failed (${res.status})`);
@@ -101,28 +106,38 @@ export const api = {
   },
 
   async getBackendOverview() {
-    const [rootRes, healthRes, workersRes, analyticsRes] = await Promise.all([
-      fetchWithTimeout(`${API_ORIGIN}/`, {}, 1800),
-      fetchWithTimeout(`${API_BASE_URL}/health`, {}, 1800),
-      fetchWithTimeout(`${API_BASE_URL}/workers`, {}, 1800),
-      fetchWithTimeout(`${API_BASE_URL}/cooperative/analytics`, {}, 1800),
-    ]);
+    try {
+      const [rootRes, healthRes, workersRes, analyticsRes] = await Promise.all([
+        fetchWithTimeout(`${API_ORIGIN}/`, {}, 10000),
+        fetchWithTimeout(`${API_BASE_URL}/health`, {}, 10000),
+        fetchWithTimeout(`${API_BASE_URL}/workers`, {}, 10000),
+        fetchWithTimeout(`${API_BASE_URL}/cooperative/analytics`, {}, 10000),
+      ]);
 
-    if (!healthRes.ok) throw new Error(`Backend health returned ${healthRes.status}`);
-    const [apiIndex, health, workers, analytics] = await Promise.all([
-      rootRes.json(),
-      healthRes.json(),
-      workersRes.ok ? workersRes.json() : [],
-      analyticsRes.ok ? analyticsRes.json() : COOPERATIVE_PULSE_METRICS,
-    ]);
-    isLiveBackendAvailable = health.status === "OK";
-    return { apiIndex, health, workers, analytics };
+      if (!healthRes.ok) throw new Error(`Backend health returned ${healthRes.status}`);
+      const [apiIndex, health, workers, analytics] = await Promise.all([
+        rootRes.json(),
+        healthRes.json(),
+        workersRes.ok ? workersRes.json() : [],
+        analyticsRes.ok ? analyticsRes.json() : COOPERATIVE_PULSE_METRICS,
+      ]);
+      isLiveBackendAvailable = health.status === "OK";
+      return { apiIndex, health, workers, analytics };
+    } catch (err) {
+      isLiveBackendAvailable = false;
+      return {
+        apiIndex: { service: "CO-OP OS API", status: "OFFLINE" },
+        health: { status: "OFFLINE" },
+        workers: WORKERS,
+        analytics: COOPERATIVE_PULSE_METRICS,
+      };
+    }
   },
 
   // Workers
   async getWorkers() {
     try {
-      const res = await fetch(`${API_BASE_URL}/workers`);
+      const res = await fetchWithTimeout(`${API_BASE_URL}/workers`, {}, 12000);
       if (res.ok) {
         const data = await res.json();
         isLiveBackendAvailable = true;
@@ -156,11 +171,11 @@ export const api = {
   // Worker Status Update
   async updateWorkerStatus(workerId, status) {
     try {
-      const res = await fetch(`${API_BASE_URL}/workers/${workerId}/status`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/workers/${workerId}/status`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
-      });
+      }, 10000);
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
         throw new Error(error.error?.message || `Worker status update failed (${res.status})`);
@@ -182,28 +197,28 @@ export const api = {
   async getJobs(params = {}) {
     try {
       const query = new URLSearchParams(params).toString();
-      const res = await fetch(`${API_BASE_URL}/jobs?${query}`);
+      const res = await fetchWithTimeout(`${API_BASE_URL}/jobs?${query}`, {}, 10000);
       if (res.ok) return await res.json();
     } catch (e) {}
     return { success: true, data: [] };
   },
 
   async createJob(jobData) {
-    const res = await fetch(`${API_BASE_URL}/jobs`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/jobs`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(jobData),
-    });
+    }, 12000);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || "Failed to create job");
     return data;
   },
 
   async applyForJob(jobId) {
-    const res = await fetch(`${API_BASE_URL}/jobs/${jobId}/apply`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/jobs/${jobId}/apply`, {
       method: "POST",
       headers: getAuthHeaders(),
-    });
+    }, 12000);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || "Failed to submit job application");
     return data;
@@ -212,9 +227,9 @@ export const api = {
   // Notifications
   async getNotifications() {
     try {
-      const res = await fetch(`${API_BASE_URL}/notifications`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/notifications`, {
         headers: getAuthHeaders(),
-      });
+      }, 10000);
       if (res.ok) return await res.json();
     } catch (e) {}
     return { success: true, data: [] };
@@ -224,9 +239,9 @@ export const api = {
   async getPayments(params = {}) {
     try {
       const query = new URLSearchParams(params).toString();
-      const res = await fetch(`${API_BASE_URL}/payments?${query}`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/payments?${query}`, {
         headers: getAuthHeaders(),
-      });
+      }, 10000);
       if (res.ok) return await res.json();
     } catch (e) {}
     return { success: true, data: [] };
@@ -235,28 +250,28 @@ export const api = {
   async getAttendance(params = {}) {
     try {
       const query = new URLSearchParams(params).toString();
-      const res = await fetch(`${API_BASE_URL}/attendance?${query}`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/attendance?${query}`, {
         headers: getAuthHeaders(),
-      });
+      }, 10000);
       if (res.ok) return await res.json();
     } catch (e) {}
     return { success: true, data: [] };
   },
 
   async checkIn(jobId) {
-    const res = await fetch(`${API_BASE_URL}/attendance/check-in`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/attendance/check-in`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({ jobId }),
-    });
+    }, 10000);
     return await res.json();
   },
 
   async checkOut(attendanceId) {
-    const res = await fetch(`${API_BASE_URL}/attendance/${attendanceId}/check-out`, {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/attendance/${attendanceId}/check-out`, {
       method: "PATCH",
       headers: getAuthHeaders(),
-    });
+    }, 10000);
     return await res.json();
   },
 
@@ -270,7 +285,7 @@ export const api = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(intent),
         },
-        1800,
+        12000,
       );
       if (res.ok) {
         const data = await res.json();
@@ -312,7 +327,7 @@ export const api = {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestData),
         },
-        1800,
+        12000,
       );
       if (res.ok) {
         const data = await res.json();
@@ -336,11 +351,11 @@ export const api = {
   // Transition Request Status
   async updateRequestStatus(id, targetStatus, currentStatus, extra = {}) {
     try {
-      const res = await fetch(`${API_BASE_URL}/service-requests/${id}/status`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/service-requests/${id}/status`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ status: targetStatus, currentStatus, ...extra }),
-      });
+      }, 10000);
       if (res.ok) {
         const data = await res.json();
         isLiveBackendAvailable = true;
@@ -357,7 +372,7 @@ export const api = {
   // Cooperative Analytics Endpoint
   async getCooperativePulse() {
     try {
-      const res = await fetch(`${API_BASE_URL}/cooperative/analytics`);
+      const res = await fetchWithTimeout(`${API_BASE_URL}/cooperative/analytics`, {}, 12000);
       if (res.ok) {
         const data = await res.json();
         isLiveBackendAvailable = true;
@@ -372,7 +387,7 @@ export const api = {
   // Trade Assessment API Methods
   async getAssessmentConfig(category) {
     try {
-      const res = await fetch(`${API_BASE_URL}/assessments/config/${category}`);
+      const res = await fetchWithTimeout(`${API_BASE_URL}/assessments/config/${category}`, {}, 10000);
       if (res.ok) return await res.json();
     } catch (err) {}
     return null;
@@ -380,11 +395,11 @@ export const api = {
 
   async submitAssessment(payload) {
     try {
-      const res = await fetch(`${API_BASE_URL}/assessments/submit`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/assessments/submit`, {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
-      });
+      }, 12000);
       if (res.ok) return await res.json();
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error?.message || "Assessment submission failed");
@@ -395,9 +410,9 @@ export const api = {
 
   async getPendingAssessments() {
     try {
-      const res = await fetch(`${API_BASE_URL}/assessments/pending`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/assessments/pending`, {
         headers: getAuthHeaders(),
-      });
+      }, 10000);
       if (res.ok) return await res.json();
     } catch (err) {}
     return [];
@@ -405,11 +420,11 @@ export const api = {
 
   async verifyAssessment(id, payload = {}) {
     try {
-      const res = await fetch(`${API_BASE_URL}/assessments/${id}/verify`, {
+      const res = await fetchWithTimeout(`${API_BASE_URL}/assessments/${id}/verify`, {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify(payload),
-      });
+      }, 10000);
       if (res.ok) return await res.json();
     } catch (err) {}
     return { success: false };
