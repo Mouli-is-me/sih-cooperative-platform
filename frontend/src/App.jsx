@@ -24,6 +24,7 @@ import { getFairMatches } from "./services/matching.js";
 import { INITIAL_REQUESTS, WORKERS } from "./services/mockData.js";
 import { api, checkBackendHealth } from "./services/api.js";
 import { getStoredLanguage, setStoredLanguage } from "./services/i18n.js";
+import { AuthProvider } from "./context/AuthContext.jsx";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -300,7 +301,9 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

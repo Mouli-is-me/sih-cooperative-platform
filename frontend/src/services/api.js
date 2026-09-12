@@ -12,7 +12,14 @@ const API_BASE_URL =
     : "http://localhost:5000/api");
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
-const fetchWithTimeout = async (url, options = {}, timeoutMs = 2500) => {
+const getAuthHeaders = () => {
+  const token = typeof window !== "undefined" ? localStorage.getItem("coop_os_token") : null;
+  return token
+    ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
+    : { "Content-Type": "application/json" };
+};
+
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 3000) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -46,24 +53,51 @@ export const checkBackendHealth = async () => {
 
 // Centralized API Methods
 export const api = {
+  // Authentication API
+  async login(credentials) {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "Login failed");
+    return data;
+  },
+
+  async register(userData) {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "Registration failed");
+    return data;
+  },
+
+  async getMe(token) {
+    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch profile");
+    return await res.json();
+  },
+
+  // Workers Registration & Fetch
   async registerWorker(workerData) {
-    const res = await fetchWithTimeout(
-      `${API_BASE_URL}/workers/register`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(workerData),
-      },
-      2500,
-    );
+    const res = await fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...workerData, fullName: workerData.name, role: "worker" }),
+    });
     if (!res.ok) {
       const error = await res.json().catch(() => ({}));
-      throw new Error(
-        error.error || `Worker registration failed (${res.status})`,
-      );
+      throw new Error(error.error?.message || `Worker registration failed (${res.status})`);
     }
     const data = await res.json();
-    return { ...data, id: data.id || data._id };
+    return { ...data.data.user, id: data.data.user.id };
   },
 
   async getBackendOverview() {
@@ -74,8 +108,7 @@ export const api = {
       fetchWithTimeout(`${API_BASE_URL}/cooperative/analytics`, {}, 1800),
     ]);
 
-    if (!healthRes.ok)
-      throw new Error(`Backend health returned ${healthRes.status}`);
+    if (!healthRes.ok) throw new Error(`Backend health returned ${healthRes.status}`);
     const [apiIndex, health, workers, analytics] = await Promise.all([
       rootRes.json(),
       healthRes.json(),
@@ -98,10 +131,7 @@ export const api = {
               const worker = entry.worker || entry;
               return {
                 ...worker,
-                fairMatchScore:
-                  entry.fairMatchScore ??
-                  entry.finalScore ??
-                  worker.fairMatchScore,
+                fairMatchScore: entry.fairMatchScore ?? entry.finalScore ?? worker.fairMatchScore,
                 breakdown: entry.breakdown || {
                   skillFit: entry.skillScore,
                   availabilityScore: entry.availabilityScore,
@@ -123,19 +153,17 @@ export const api = {
     return WORKERS;
   },
 
-  // Worker Status Update (Hardware / Companion API)
+  // Worker Status Update
   async updateWorkerStatus(workerId, status) {
     try {
       const res = await fetch(`${API_BASE_URL}/workers/${workerId}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
       });
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
-        throw new Error(
-          error.error || `Worker status update failed (${res.status})`,
-        );
+        throw new Error(error.error?.message || `Worker status update failed (${res.status})`);
       }
       const data = await res.json();
       isLiveBackendAvailable = true;
@@ -148,6 +176,88 @@ export const api = {
     match.status = status;
     match.isAvailable = status === "AVAILABLE";
     return match;
+  },
+
+  // Jobs & Work Opportunities
+  async getJobs(params = {}) {
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`${API_BASE_URL}/jobs?${query}`);
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return { success: true, data: [] };
+  },
+
+  async createJob(jobData) {
+    const res = await fetch(`${API_BASE_URL}/jobs`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(jobData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "Failed to create job");
+    return data;
+  },
+
+  async applyForJob(jobId) {
+    const res = await fetch(`${API_BASE_URL}/jobs/${jobId}/apply`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || "Failed to submit job application");
+    return data;
+  },
+
+  // Notifications
+  async getNotifications() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/notifications`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return { success: true, data: [] };
+  },
+
+  // Payments & Attendance
+  async getPayments(params = {}) {
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`${API_BASE_URL}/payments?${query}`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return { success: true, data: [] };
+  },
+
+  async getAttendance(params = {}) {
+    try {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`${API_BASE_URL}/attendance?${query}`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) return await res.json();
+    } catch (e) {}
+    return { success: true, data: [] };
+  },
+
+  async checkIn(jobId) {
+    const res = await fetch(`${API_BASE_URL}/attendance/check-in`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ jobId }),
+    });
+    return await res.json();
+  },
+
+  async checkOut(attendanceId) {
+    const res = await fetch(`${API_BASE_URL}/attendance/${attendanceId}/check-out`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+    });
+    return await res.json();
   },
 
   // Service Matches via Backend FairMatch Engine
@@ -170,10 +280,7 @@ export const api = {
               const worker = entry.worker || entry;
               return {
                 ...worker,
-                fairMatchScore:
-                  entry.fairMatchScore ??
-                  entry.finalScore ??
-                  worker.fairMatchScore,
+                fairMatchScore: entry.fairMatchScore ?? entry.finalScore ?? worker.fairMatchScore,
                 breakdown: entry.breakdown || {
                   skillFit: entry.skillScore,
                   availabilityScore: entry.availabilityScore,
@@ -213,7 +320,7 @@ export const api = {
         return { ...data, id: data.id || data._id };
       }
       const error = await res.json().catch(() => ({}));
-      throw new Error(error.error || `Service request failed (${res.status})`);
+      throw new Error(error.error?.message || `Service request failed (${res.status})`);
     } catch (err) {
       if (err.name !== "TypeError" && err.name !== "AbortError") throw err;
       isLiveBackendAvailable = false;
@@ -231,7 +338,7 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/service-requests/${id}/status`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ status: targetStatus, currentStatus, ...extra }),
       });
       if (res.ok) {
@@ -240,9 +347,7 @@ export const api = {
         return data;
       }
       const error = await res.json().catch(() => ({}));
-      throw new Error(
-        error.error || `Request status update failed (${res.status})`,
-      );
+      throw new Error(error.error?.message || `Request status update failed (${res.status})`);
     } catch (err) {
       isLiveBackendAvailable = false;
     }
@@ -277,12 +382,12 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/assessments/submit`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
       });
       if (res.ok) return await res.json();
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || "Assessment submission failed");
+      throw new Error(err.error?.message || "Assessment submission failed");
     } catch (err) {
       throw err;
     }
@@ -290,7 +395,9 @@ export const api = {
 
   async getPendingAssessments() {
     try {
-      const res = await fetch(`${API_BASE_URL}/assessments/pending`);
+      const res = await fetch(`${API_BASE_URL}/assessments/pending`, {
+        headers: getAuthHeaders(),
+      });
       if (res.ok) return await res.json();
     } catch (err) {}
     return [];
@@ -300,12 +407,11 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/assessments/${id}/verify`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        headers: getAuthHeaders(),
+        body: JSON.stringify(payload),
       });
       if (res.ok) return await res.json();
     } catch (err) {}
     return { success: false };
-  }
+  },
 };
-

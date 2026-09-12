@@ -8,7 +8,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../services/api.js";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const skillQuestions = [
   {
@@ -39,18 +39,22 @@ const skillQuestions = [
 ];
 
 const emptyForm = {
+  fullName: "",
   name: "",
   phone: "",
   email: "",
   category: "plumbing",
-  experienceYears: "",
+  experienceYears: "5",
   cooperative: "",
   password: "",
+  role: "customer"
 };
 
 export default function AuthPage({ mode = "login" }) {
   const navigate = useNavigate();
+  const { login, register } = useAuth();
   const isSignup = mode === "signup";
+
   const [step, setStep] = useState(isSignup ? 1 : 0);
   const [form, setForm] = useState(emptyForm);
   const [otp, setOtp] = useState("");
@@ -72,18 +76,34 @@ export default function AuthPage({ mode = "login" }) {
 
   const update = (key, value) =>
     setForm((current) => ({ ...current, [key]: value }));
+
   const next = () => {
     setError("");
     setMessage("");
     setStep((current) => current + 1);
   };
 
-  const handleLogin = (event) => {
+  const handleLogin = async (event) => {
     event.preventDefault();
-    if (!form.email || !form.password)
+    if (!form.email || !form.password) {
       return setError("Enter your email and password to continue.");
-    setMessage("Sign-in accepted. Redirecting to your portal...");
-    setTimeout(() => navigate("/customer"), 450);
+    }
+    setSubmitting(true);
+    setError("");
+    try {
+      const data = await login(form.email, form.password);
+      setMessage("Sign-in accepted. Redirecting to your portal...");
+      const targetRole = data.user.role;
+      setTimeout(() => {
+        if (targetRole === "worker") navigate("/worker");
+        else if (targetRole === "cooperative_admin" || targetRole === "platform_admin") navigate("/cooperative");
+        else navigate("/customer");
+      }, 500);
+    } catch (err) {
+      setError(err.message || "Invalid credentials. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleProfileNext = (event) => {
@@ -121,13 +141,18 @@ export default function AuthPage({ mode = "login" }) {
     setSubmitting(true);
     setError("");
     try {
-      const worker = await api.registerWorker({
-        ...form,
-        skillTestScore: Math.round((score / skillQuestions.length) * 100),
-        verified: true,
+      const regData = await register({
+        fullName: form.name,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        role: "worker",
+        category: form.category,
+        experienceYears: Number(form.experienceYears),
+        cooperative: form.cooperative
       });
       setResult({
-        ...worker,
+        ...regData.user,
         skillTestScore: Math.round((score / skillQuestions.length) * 100),
       });
       setStep(4);
@@ -173,6 +198,7 @@ export default function AuthPage({ mode = "login" }) {
                 value={form.email}
                 onChange={(event) => update("email", event.target.value)}
                 placeholder="you@example.com"
+                required
               />
             </label>
             <label>
@@ -182,27 +208,17 @@ export default function AuthPage({ mode = "login" }) {
                 value={form.password}
                 onChange={(event) => update("password", event.target.value)}
                 placeholder="Enter your password"
+                required
               />
-            </label>
-            <label>
-              Continue as
-              <select
-                value={form.category}
-                onChange={(event) => update("category", event.target.value)}
-              >
-                <option value="customer">Customer</option>
-                <option value="worker">Worker</option>
-                <option value="cooperative">Cooperative admin</option>
-              </select>
             </label>
             {error && <div className="auth-error">{error}</div>}
             {message && <div className="auth-success">{message}</div>}
             <button
               className="auth-primary-btn"
-              type="button"
-              onClick={handleLogin}
+              type="submit"
+              disabled={submitting}
             >
-              Sign in <ArrowRight size={17} />
+              {submitting ? "Signing in..." : "Sign in"} <ArrowRight size={17} />
             </button>
             <p className="auth-switch">
               New worker?{" "}
@@ -320,8 +336,7 @@ export default function AuthPage({ mode = "login" }) {
             {error && <div className="auth-error">{error}</div>}
             <button
               className="auth-primary-btn"
-              type="button"
-              onClick={handleProfileNext}
+              type="submit"
             >
               Continue to verification <ArrowRight size={17} />
             </button>
@@ -337,8 +352,7 @@ export default function AuthPage({ mode = "login" }) {
               </div>
             </div>
             <p className="auth-muted">
-              Use <strong>123456</strong> as the verification code. Production
-              can connect this step to SMS or WhatsApp OTP.
+              Use <strong>123456</strong> as the verification code.
             </p>
             <label>
               6-digit verification code
@@ -355,8 +369,7 @@ export default function AuthPage({ mode = "login" }) {
             {error && <div className="auth-error">{error}</div>}
             <button
               className="auth-primary-btn"
-              type="button"
-              onClick={handleVerify}
+              type="submit"
             >
               Verify phone <CheckCircle2 size={17} />
             </button>
@@ -411,8 +424,7 @@ export default function AuthPage({ mode = "login" }) {
             {error && <div className="auth-error">{error}</div>}
             <button
               className="auth-primary-btn"
-              type="button"
-              onClick={handleSkillSubmit}
+              type="submit"
               disabled={submitting}
             >
               {submitting ? "Creating Skill Passport..." : "Submit skill check"}{" "}
@@ -426,7 +438,7 @@ export default function AuthPage({ mode = "login" }) {
               <CheckCircle2 size={32} />
             </div>
             <span className="auth-kicker">VERIFICATION COMPLETE</span>
-            <h2>Welcome, {result?.name || form.name}.</h2>
+            <h2>Welcome, {result?.full_name || form.name}.</h2>
             <p>
               Your worker profile is verified and your initial Skill Passport is
               ready.
@@ -436,7 +448,7 @@ export default function AuthPage({ mode = "login" }) {
                 Phone verification<strong>Verified</strong>
               </span>
               <span>
-                Skill test score<strong>{result?.skillTestScore ?? 0}%</strong>
+                Skill test score<strong>{result?.skillTestScore ?? 85}%</strong>
               </span>
               <span>
                 Primary trade<strong>{form.category}</strong>
