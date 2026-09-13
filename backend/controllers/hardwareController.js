@@ -104,7 +104,6 @@ export const getDeviceState = async (req, res) => {
 export const deviceHeartbeat = async (req, res) => {
   try {
     const { deviceCode } = req.params;
-
     const { state = "AVAILABLE" } = req.body;
 
     const validStates = [
@@ -124,20 +123,64 @@ export const deviceHeartbeat = async (req, res) => {
       });
     }
 
+    // -------------------------------------------------
+    // If ESP32 accepted the job:
+    // Make the backend command ACCEPTED too.
+    // This prevents the next poll from sending
+    // JOB_REQUESTED again.
+    // -------------------------------------------------
+
+    const updateData = {
+      reported_state: state,
+      is_online: true,
+      last_seen_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (state === "JOB_ACCEPTED") {
+      updateData.desired_state = "JOB_ACCEPTED";
+    }
+
+    if (state === "AVAILABLE") {
+      updateData.desired_state = "AVAILABLE";
+      updateData.pending_job_id = null;
+    }
+
     const { data, error } = await supabase
       .from("hardware_devices")
-      .update({
-        reported_state: state,
-        is_online: true,
-        last_seen_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("device_code", deviceCode)
       .select()
       .single();
 
     if (error) {
-      throw error;
+      console.error("Hardware heartbeat database error:", error);
+
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: "DATABASE_ERROR",
+          message: error.message,
+        },
+      });
+    }
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: "DEVICE_NOT_FOUND",
+          message: "Device not found",
+        },
+      });
+    }
+
+    console.log(`[HARDWARE] ${deviceCode} reported ${state}`);
+
+    if (state === "JOB_ACCEPTED") {
+      console.log(
+        `[HARDWARE] ${deviceCode} accepted job ${data.pending_job_id || "unknown"}`,
+      );
     }
 
     return res.json({
@@ -156,7 +199,6 @@ export const deviceHeartbeat = async (req, res) => {
     });
   }
 };
-
 // =====================================================
 // WEBSITE → HARDWARE
 // SEND JOB REQUEST / ACCEPT / AVAILABLE
