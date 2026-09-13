@@ -1,3 +1,4 @@
+import hardwareRoutes from "./routes/hardwareRoutes.js";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -82,6 +83,7 @@ app.use(
 app.use(express.json({ limit: "2mb" }));
 
 // Health Check & Root Endpoints
+
 app.get("/", (req, res) => {
   res.status(200).json({
     service: "CO-OP OS API Server",
@@ -107,6 +109,8 @@ app.get("/api", (req, res) => {
       attendance: "GET /api/attendance, POST /api/attendance/check-in",
       auditLogs: "GET /api/audit-logs",
       analytics: "GET /api/cooperative/analytics",
+      hardware:
+        "GET /api/hardware/dashboard/:deviceCode, PATCH /api/hardware/dashboard/:deviceCode/command",
     },
   });
 });
@@ -123,6 +127,7 @@ app.get("/api/health", (req, res) => {
 // API Routes Mounting
 app.use("/api/auth", authRoutes);
 app.use("/api/workers", workerRoutes);
+app.use("/api/hardware", hardwareRoutes);
 app.use("/api/service-requests", requestRoutes);
 app.use("/api/cooperative", cooperativeRoutes);
 app.use("/api/assessments", assessmentRoutes);
