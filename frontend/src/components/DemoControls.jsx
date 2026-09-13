@@ -81,7 +81,23 @@ export default function DemoControls({
       setHardwareLoading(true);
       setHardwareError("");
 
-      const result = await api.getHardwareDevice(DEVICE_CODE);
+      const response = await fetch(
+        "https://sih-cooperative-platform.onrender.com/api/hardware/device/DEV-001/state",
+        {
+          method: "GET",
+          headers: {
+            "X-Device-Code": "DEV-001",
+            "X-Device-Key": "SIH-DEV001-2026",
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`Hardware status failed: ${response.status}`);
+      }
+
+      const result = await response.json();
 
       if (result?.device) {
         setHardware(result.device);
