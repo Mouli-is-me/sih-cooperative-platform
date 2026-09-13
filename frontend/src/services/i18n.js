@@ -11,23 +11,27 @@ export const TRANSLATIONS = {
     coopPulseNav: "Cooperative Pulse",
     workerLoginBtn: "Worker Login",
     getStartedBtn: "Get Started",
-    
+
     // Hero & Service Intent
     heroEyebrow: "THE COOPERATIVE WORKFORCE NETWORK",
     heroTitleLine1: "Find trusted skilled workers.",
     heroTitleLine2: "Matched intelligently.",
     heroTitleLine3: "Fair opportunity shared.",
-    heroSub: "Connect with verified cooperative specialists while giving skilled tradespeople fair opportunities — powered by our transparent FairMatch™ engine.",
+    heroSub:
+      "Connect with verified cooperative specialists while giving skilled tradespeople fair opportunities — powered by our transparent FairMatch™ engine.",
     intentEyebrow: "INTENT ENGINE 2.0",
     intentTitle: "What service do you need help with?",
-    intentSub: "Describe your need in plain words (English, Tamil, Hindi, Tanglish, or Hinglish). FairMatch™ interprets your request instantly.",
-    inputPlaceholder: 'Describe your service need... e.g. "Kitchen tap leaking since morning" or "Ceiling fan regulator sparking"',
+    intentSub:
+      "Describe your need in plain words (English, Tamil, Hindi, Tanglish, or Hinglish). FairMatch™ interprets your request instantly.",
+    inputPlaceholder:
+      'Describe your service need... e.g. "Kitchen tap leaking since morning" or "Ceiling fan regulator sparking"',
     findRightWorkerBtn: "Find Right Worker",
     tryExamples: "Try example requests:",
     household: "Household",
     institution: "Institution / Commercial",
-    institutionNotice: "Institutional Mode: Multi-worker & team dispatch enabled.",
-    
+    institutionNotice:
+      "Institutional Mode: Multi-worker & team dispatch enabled.",
+
     // How It Works & Core Philosophy
     howItWorksTitle: "How CO-OP OS Works",
     step1Title: "1. Describe Your Need",
@@ -38,7 +42,7 @@ export const TRANSLATIONS = {
     step3Desc: "Certified local worker accepts your assignment.",
     step4Title: "4. Quality Execution",
     step4Desc: "Fair price service with verified Skill Passport update.",
-    
+
     // Quick Categories
     exploreTrades: "Common Service Categories",
     catPlumbing: "Plumbing",
@@ -52,7 +56,8 @@ export const TRANSLATIONS = {
 
     // Match Results & Worker Cards
     resultsTitle: "Best Cooperative Matches",
-    resultsSub: "Ranked by skill fit, reliability, distance, and Opportunity Equity (15%).",
+    resultsSub:
+      "Ranked by skill fit, reliability, distance, and Opportunity Equity (15%).",
     fairMatchScoreLabel: "FairMatch™ Score",
     whyThisWorker: "Why this worker?",
     whyThisMatch: "WHY THIS MATCH?",
@@ -68,13 +73,13 @@ export const TRANSLATIONS = {
     busyNow: "Busy",
     verifiedBadge: "Verified Member",
     recommendedBadge: "RECOMMENDED FAIRMATCH™ SELECTION",
-    
+
     // Traditional vs FairMatch
     traditionalVsFairMatchTitle: "TRADITIONAL MARKETPLACE vs CO-OP FAIRMATCH™",
     fairMatchOn: "FairMatch ON (Cooperative Equity)",
     fairMatchOff: "FairMatch OFF (Traditional Concentration)",
     whyNotHighestRatedBtn: "Why wasn't the highest-rated worker selected?",
-    
+
     // Skill Passport
     passportHeader: "OFFICIAL WORKER SKILL PASSPORT",
     verifiedSkills: "VERIFIED SKILLS & EVIDENCE",
@@ -87,6 +92,12 @@ export const TRANSLATIONS = {
     serviceHistoryTab: "Completed Services",
     savedWorkersTab: "Cooperative Workers",
     noActiveRequests: "No active service requests currently.",
+    statusCreated: "Request Created",
+    statusMatched: "FairMatch Completed",
+    statusAccepted: "Worker Accepted",
+    statusEnRoute: "Worker En Route",
+    statusStarted: "Job Started",
+    statusCompleted: "Service Completed",
 
     // Worker Dashboard
     workerDashWelcome: "Today's Opportunities",
@@ -100,7 +111,8 @@ export const TRANSLATIONS = {
     workerPortalEyebrow: "WORKER PORTAL",
     workloadCapacityLabel: "CURRENT WORKLOAD CAPACITY",
     lowWorkloadBalanced: "Low Workload (Balanced)",
-    fairMatchActiveHint: "FairMatch™ is active: You are priority candidate for new local Plumbing requests.",
+    fairMatchActiveHint:
+      "FairMatch™ is active: You are priority candidate for new local Plumbing requests.",
     todaysSchedule: "TODAY'S SCHEDULE",
     jobsLabel: "Jobs",
     completedUpcoming: "2 Completed • 1 Upcoming",
@@ -109,7 +121,8 @@ export const TRANSLATIONS = {
     reliabilityScore: "RELIABILITY SCORE",
     onTimeRecord: "94% On-Time Record",
     pendingDispatchCount: "pending dispatch",
-    emptyRequests: "You have processed all incoming service dispatch requests for this window.",
+    emptyRequests:
+      "You have processed all incoming service dispatch requests for this window.",
     customerLabel: "Customer",
     locationLabel: "Location",
     durationLabel: "Duration",
@@ -120,27 +133,33 @@ export const TRANSLATIONS = {
     coopAnalyticsEyebrow: "COOPERATIVE FEDERATION ANALYTICS",
     liveApiBadge: "LIVE API DATA",
     demoDataBadge: "Demo Workforce Simulation Data",
-    coopPulseDesc: "Real-time operational intelligence empowering labour cooperative societies to balance opportunity distribution, identify regional skill bottlenecks, and protect worker welfare.",
+    coopPulseDesc:
+      "Real-time operational intelligence empowering labour cooperative societies to balance opportunity distribution, identify regional skill bottlenecks, and protect worker welfare.",
     optimalDistribution: "Optimal Fair Distribution",
     activeVerifiedWorkers: "Active Verified Workers",
     monthlyRequests: "Service Requests This Month",
     jobsCompleted: "Jobs Successfully Completed",
     fairDistributionRate: "Fair Distribution Rate",
-    workforceOpportunityDistribution: "WORKFORCE OPPORTUNITY DISTRIBUTION BY COHORT",
-    fairMatchAllocationExplanation: "FairMatch considers recent opportunity distribution when allocating new work, preventing single technicians from taking over 60%+ of community work orders.",
+    workforceOpportunityDistribution:
+      "WORKFORCE OPPORTUNITY DISTRIBUTION BY COHORT",
+    fairMatchAllocationExplanation:
+      "FairMatch considers recent opportunity distribution when allocating new work, preventing single technicians from taking over 60%+ of community work orders.",
     capacityNeeded: "Capacity Needed",
-    recruitmentRecommended: "additional workers recommended for cooperative onboarding",
+    recruitmentRecommended:
+      "additional workers recommended for cooperative onboarding",
 
     // Traditional vs FairMatch
     matchingDemoEyebrow: "SIGNATURE MATCHING PHILOSOPHY DEMONSTRATION",
-    matchingDemoDesc: "Toggle FairMatch ON / OFF to see how commercial aggregators over-concentrate requests on single top-rated technicians versus how CO-OP OS balances community opportunities.",
+    matchingDemoDesc:
+      "Toggle FairMatch ON / OFF to see how commercial aggregators over-concentrate requests on single top-rated technicians versus how CO-OP OS balances community opportunities.",
     recommendedDispatchCandidate: "RECOMMENDED DISPATCH CANDIDATE",
     fairMatchSelectedDesc: "Selected by FairMatch™",
     traditionalSelectedDesc: "Selected by Rating Aggregator",
     fairMatchBalancedTitle: "FAIRMATCH OPPORTUNITY DISTRIBUTION (BALANCED)",
     traditionalInequitableTitle: "TRADITIONAL CONCENTRATION (INEQUITABLE)",
     shareLabel: "share",
-    philosophyDisclaimer: "Demonstration of matching philosophy metrics. Clearly shows how FairMatch protects worker welfare.",
+    philosophyDisclaimer:
+      "Demonstration of matching philosophy metrics. Clearly shows how FairMatch protects worker welfare.",
 
     // Why Not Highest Rated
     whyNotTitle: "Why wasn't the highest-rated worker selected?",
@@ -150,11 +169,13 @@ export const TRANSLATIONS = {
     // Closed Loop Diagram
     selfReinforcingSystem: "SELF-REINFORCING COOPERATIVE SYSTEM",
     closedLoopTitle: "How the Closed-Loop Platform Intelligence Works",
-    closedLoopSub: "Every completed job creates useful workforce intelligence — expanding worker credentials, refining FairMatch accuracy, and guiding cooperative recruitment.",
+    closedLoopSub:
+      "Every completed job creates useful workforce intelligence — expanding worker credentials, refining FairMatch accuracy, and guiding cooperative recruitment.",
     step1TitleLoop: "Service Request",
     step1DescLoop: "Customer describes service intent in plain language",
     step2TitleLoop: "FairMatch™ Engine",
-    step2DescLoop: "Multi-factor algorithm balances skill fit, distance & workload",
+    step2DescLoop:
+      "Multi-factor algorithm balances skill fit, distance & workload",
     step3TitleLoop: "Worker Dispatch",
     step3DescLoop: "Verified cooperative member receives and accepts job",
     step4TitleLoop: "Job Completion",
@@ -176,18 +197,21 @@ export const TRANSLATIONS = {
     verifiedSkillsTitle: "VERIFIED SKILLS & COMPETENCY EVIDENCE",
     coopVerificationsTitle: "COOPERATIVE VERIFICATIONS & CREDENTIALS",
     workerProfileSummaryTitle: "WORKER PROFILE SUMMARY",
-    governanceGuarantee: "Verified under Labour Cooperative Federation Governance Rules.",
+    governanceGuarantee:
+      "Verified under Labour Cooperative Federation Governance Rules.",
     requestWorkerNow: "Request Worker Now →",
 
     // Footer
-    footerTagline: "Technology should not replace the cooperative worker. Technology should make the cooperative worker more visible, accessible, and fairly utilized.",
-    copyrightNotice: "© 2026 CO-OP OS — Smart India Hackathon Competition Prototype.",
+    footerTagline:
+      "Technology should not replace the cooperative worker. Technology should make the cooperative worker more visible, accessible, and fairly utilized.",
+    copyrightNotice:
+      "© 2026 CO-OP OS — Smart India Hackathon Competition Prototype.",
     platformViewsTitle: "Platform Views",
     coreInnovationsTitle: "Core Innovations",
     intelligentMatching: "FairMatch™ Intelligent Matching",
     opportunityBalanceIndex: "Opportunity Balance Index",
     digitalSkillPassport: "Digital Skill Passport",
-    workforceGapAnalysis: "Regional Workforce Gap Analysis"
+    workforceGapAnalysis: "Regional Workforce Gap Analysis",
   },
 
   ta: {
@@ -206,16 +230,20 @@ export const TRANSLATIONS = {
     heroTitleLine1: "நம்பகமான திறமையான தொழிலாளர்கள்.",
     heroTitleLine2: "புத்திசாலித்தனமாக பொருத்தம்.",
     heroTitleLine3: "நியாயமான வாய்ப்புகள்.",
-    heroSub: "சரிபார்க்கப்பட்ட கூட்டுறவு பணியாளர்களுடன் இணையுங்கள், அதே நேரத்தில் சமூகத்தில் வாய்ப்புகளை நியாயமாக பங்களிக்கவும்.",
+    heroSub:
+      "சரிபார்க்கப்பட்ட கூட்டுறவு பணியாளர்களுடன் இணையுங்கள், அதே நேரத்தில் சமூகத்தில் வாய்ப்புகளை நியாயமாக பங்களிக்கவும்.",
     intentEyebrow: "இயற்கையான பேச்சு சேவை என்ஜின் 2.0",
     intentTitle: "உங்களுக்கு என்ன சேவை உதவி தேவை?",
-    intentSub: "உங்கள் தேவையை எளிய முறையில் தமிழ், ஆங்கிலம் அல்லது தங்க்லீஷில் கூறுங்கள். FairMatch™ சரியான பணியாளரைத் தேர்ந்தெடுக்கும்.",
-    inputPlaceholder: 'உங்கள் பிரச்சனையை எளிய முறையில் கூறுங்கள்... எ.கா. "அண்ணா கிச்சன் டேப் லீக் ஆகுது"',
+    intentSub:
+      "உங்கள் தேவையை எளிய முறையில் தமிழ், ஆங்கிலம் அல்லது தங்க்லீஷில் கூறுங்கள். FairMatch™ சரியான பணியாளரைத் தேர்ந்தெடுக்கும்.",
+    inputPlaceholder:
+      'உங்கள் பிரச்சனையை எளிய முறையில் கூறுங்கள்... எ.கா. "அண்ணா கிச்சன் டேப் லீக் ஆகுது"',
     findRightWorkerBtn: "சரியான பணியாளரைக் கண்டறிக",
     tryExamples: "மாதிரி கோரிக்கைகள்:",
     household: "வீட்டு உபயோகம்",
     institution: "நிறுவனம் / வணிகம்",
-    institutionNotice: "நிறுவன முறை: பல பணியாளர்கள் கொண்ட சேவைத் தேவைகளை ஆதரிக்கிறது.",
+    institutionNotice:
+      "நிறுவன முறை: பல பணியாளர்கள் கொண்ட சேவைத் தேவைகளை ஆதரிக்கிறது.",
 
     // How It Works & Core Philosophy
     howItWorksTitle: "CO-OP OS செயல்படும் முறை",
@@ -226,7 +254,8 @@ export const TRANSLATIONS = {
     step3Title: "3. பணியாளர் ஒப்புதல்",
     step3Desc: "சரிபார்க்கப்பட்ட உள்ளூர் பணியாளர் ஏற்றுக்கொள்கிறார்.",
     step4Title: "4. தரமான சேவை நிறைவேற்றம்",
-    step4Desc: "நியாயமான கட்டணத்தில் சேவை நிறைவு மற்றும் பாஸ்போர்ட் புதுப்பிப்பு.",
+    step4Desc:
+      "நியாயமான கட்டணத்தில் சேவை நிறைவு மற்றும் பாஸ்போர்ட் புதுப்பிப்பு.",
 
     // Quick Categories
     exploreTrades: "பிரபலமான சேவை பிரிவுகள்",
@@ -241,7 +270,8 @@ export const TRANSLATIONS = {
 
     // Match Results & Worker Cards
     resultsTitle: "சிறந்த கூட்டுறவு பணியாளர்கள்",
-    resultsSub: "திறன், நம்பகத்தன்மை, தூரம் மற்றும் வாய்ப்பு சமத்துவம் (15%) அடிப்படையில் தரவரிசைப்படுத்தப்பட்டது.",
+    resultsSub:
+      "திறன், நம்பகத்தன்மை, தூரம் மற்றும் வாய்ப்பு சமத்துவம் (15%) அடிப்படையில் தரவரிசைப்படுத்தப்பட்டது.",
     fairMatchScoreLabel: "FairMatch™ மதிப்பீடு",
     whyThisWorker: "ஏன் இந்த பணியாளர்?",
     whyThisMatch: "ஏன் இந்த பொருத்தம்?",
@@ -262,7 +292,8 @@ export const TRANSLATIONS = {
     traditionalVsFairMatchTitle: "பாரம்பரிய சந்தை vs கூட்டுறவு FairMatch™",
     fairMatchOn: "FairMatch இயங்குகிறது (சமத்துவம்)",
     fairMatchOff: "FairMatch முடக்கம் (பாரம்பரிய குவிப்பு)",
-    whyNotHighestRatedBtn: "அதிக ரேட்டிங் பெற்ற பணியாளர் ஏன் தேர்ந்தெடுக்கப்படவில்லை?",
+    whyNotHighestRatedBtn:
+      "அதிக ரேட்டிங் பெற்ற பணியாளர் ஏன் தேர்ந்தெடுக்கப்படவில்லை?",
 
     // Skill Passport
     passportHeader: "அதிகாரப்பூர்வ தொழிலாளர் திறன் பாஸ்போர்ட்",
@@ -303,7 +334,8 @@ export const TRANSLATIONS = {
     workerPortalEyebrow: "பணியாளர் போர்டல்",
     workloadCapacityLabel: "தற்போதைய பணிச்சுமை திறன்",
     lowWorkloadBalanced: "குறைந்த பணிச்சுமை (சமநிலையானது)",
-    fairMatchActiveHint: "FairMatch™ இயங்குகிறது: புதிய குழாய் வேலைக் கோரிக்கைகளுக்கு நீங்கள் முன்னுரிமை வேட்பாளர்.",
+    fairMatchActiveHint:
+      "FairMatch™ இயங்குகிறது: புதிய குழாய் வேலைக் கோரிக்கைகளுக்கு நீங்கள் முன்னுரிமை வேட்பாளர்.",
     todaysSchedule: "இன்றைய அட்டவணை",
     jobsLabel: "சேவைகள்",
     completedUpcoming: "2 முடிந்தது • 1 வரவிருப்பது",
@@ -312,7 +344,8 @@ export const TRANSLATIONS = {
     reliabilityScore: "நம்பகத்தன்மை மதிப்பீடு",
     onTimeRecord: "94% சரியான நேர பதிவு",
     pendingDispatchCount: "நிலுவையில் உள்ள கோரிக்கைகள்",
-    emptyRequests: "இந்த நேரத்தில் வந்தடைந்த அனைத்து சேவை கோரிக்கைகளையும் செயலாக்கி விட்டீர்கள்.",
+    emptyRequests:
+      "இந்த நேரத்தில் வந்தடைந்த அனைத்து சேவை கோரிக்கைகளையும் செயலாக்கி விட்டீர்கள்.",
     customerLabel: "வாடிக்கையாளர்",
     locationLabel: "இடம்",
     durationLabel: "காலஅளவு",
@@ -323,27 +356,32 @@ export const TRANSLATIONS = {
     coopAnalyticsEyebrow: "கூட்டுறவு கூட்டமைப்பு பகுப்பாய்வு",
     liveApiBadge: "நேரலை API தரவு",
     demoDataBadge: "மாதிரி தொழிலாளர் தரவு",
-    coopPulseDesc: "கூட்டுறவு சங்கங்கள் வாய்ப்புகளை சமமாகப் பங்கீடவும், தொழிலாளர் நலனைப் பாதுகாக்கவும் உதவும் நேரலை கண்காணிப்பு அமைப்பு.",
+    coopPulseDesc:
+      "கூட்டுறவு சங்கங்கள் வாய்ப்புகளை சமமாகப் பங்கீடவும், தொழிலாளர் நலனைப் பாதுகாக்கவும் உதவும் நேரலை கண்காணிப்பு அமைப்பு.",
     optimalDistribution: "சிறந்த சமமான பகிர்வு",
     activeVerifiedWorkers: "செயலில் உள்ள சரிபார்க்கப்பட்ட தொழிலாளர்கள்",
     monthlyRequests: "இந்த மாத சேவை கோரிக்கைகள்",
     jobsCompleted: "வெற்றிகரமாக முடித்த சேவைகள்",
     fairDistributionRate: "சமமான பகிர்வு விகிதம்",
     workforceOpportunityDistribution: "குழு வாரியாக தொழிலாளர் வாய்ப்பு பகிர்வு",
-    fairMatchAllocationExplanation: "ஒரே தொழிலாளிக்கு 60%+ வேலைகள் குவிவததைத் தடுத்து, அனைவருக்கும் வாய்ப்புகளை FairMatch சமமாகப் பகிர்ந்தளிக்கிறது.",
+    fairMatchAllocationExplanation:
+      "ஒரே தொழிலாளிக்கு 60%+ வேலைகள் குவிவததைத் தடுத்து, அனைவருக்கும் வாய்ப்புகளை FairMatch சமமாகப் பகிர்ந்தளிக்கிறது.",
     capacityNeeded: "தேவைப்படும் தொழிலாளர்கள்",
-    recruitmentRecommended: "கூட்டுறவு அமைப்பில் சேர்க்க பரிந்துரைக்கப்படும் கூடுதல் தொழிலாளர்கள்",
+    recruitmentRecommended:
+      "கூட்டுறவு அமைப்பில் சேர்க்க பரிந்துரைக்கப்படும் கூடுதல் தொழிலாளர்கள்",
 
     // Traditional vs FairMatch
     matchingDemoEyebrow: "பொருத்த தத்துவத்தின் செயல் விளக்கம்",
-    matchingDemoDesc: "வணிக நிறுவனங்கள் ஒருவருக்கே வேலைகளைக் குவிப்பதையும், CO-OP OS வாய்ப்புகளைச் சமமாகப் பகிர்வதையும் பார்க்க FairMatch ON / OFF மாற்றவும்.",
+    matchingDemoDesc:
+      "வணிக நிறுவனங்கள் ஒருவருக்கே வேலைகளைக் குவிப்பதையும், CO-OP OS வாய்ப்புகளைச் சமமாகப் பகிர்வதையும் பார்க்க FairMatch ON / OFF மாற்றவும்.",
     recommendedDispatchCandidate: "பரிந்துரைக்கப்பட்ட சேவை வேட்பாளர்",
     fairMatchSelectedDesc: "FairMatch™ மூலம் தேர்ந்தெடுக்கப்பட்டது",
     traditionalSelectedDesc: "மதிப்பீட்டு முறை மூலம் தேர்ந்தெடுக்கப்பட்டது",
     fairMatchBalancedTitle: "FAIRMATCH வாய்ப்பு பகிர்வு (சமநிலையானது)",
     traditionalInequitableTitle: "பாரம்பரிய குவிப்பு (சமமற்றது)",
     shareLabel: "பங்கு",
-    philosophyDisclaimer: "பொருத்த தத்துவத்தின் அளவீடுகள். FairMatch எவ்வாறு தொழிலாளர் நலனைப் பாதுகாக்கிறது என்பதைக் காட்டுகிறது.",
+    philosophyDisclaimer:
+      "பொருத்த தத்துவத்தின் அளவீடுகள். FairMatch எவ்வாறு தொழிலாளர் நலனைப் பாதுகாக்கிறது என்பதைக் காட்டுகிறது.",
 
     // Why Not Highest Rated
     whyNotTitle: "அதிக ரேட்டிங் பெற்ற பணியாளர் ஏன் தேர்ந்தெடுக்கப்படவில்லை?",
@@ -353,7 +391,8 @@ export const TRANSLATIONS = {
     // Closed Loop Diagram
     selfReinforcingSystem: "தன்னிறைவு பெற்ற கூட்டுறவு அமைப்பு",
     closedLoopTitle: "தொடர்-சுழற்சி தளம் எவ்வாறு செயல்படுகிறது",
-    closedLoopSub: "ஒவ்வொரு முடிவடைந்த வேலையும் தொழிலாளர் திறனை மேம்படுத்தி, FairMatch துல்லியத்தை உயர்த்துகிறது.",
+    closedLoopSub:
+      "ஒவ்வொரு முடிவடைந்த வேலையும் தொழிலாளர் திறனை மேம்படுத்தி, FairMatch துல்லியத்தை உயர்த்துகிறது.",
     step1TitleLoop: "சேவை கோரிக்கை",
     step1DescLoop: "வாடிக்கையாளர் தன் தேவையை எளிய மொழியில் விவரிக்கிறார்",
     step2TitleLoop: "FairMatch™ என்ஜின்",
@@ -379,18 +418,21 @@ export const TRANSLATIONS = {
     verifiedSkillsTitle: "சரிபார்க்கப்பட்ட திறன்கள் & சான்றுகள்",
     coopVerificationsTitle: "கூட்டுறவு சான்றிதழ்கள்",
     workerProfileSummaryTitle: "தொழிலாளர் சுயவிவர சுருக்கம்",
-    governanceGuarantee: "தொழிலாளர் கூட்டுறவு விதிகளின் கீழ் சரிபார்க்கப்பட்டது.",
+    governanceGuarantee:
+      "தொழிலாளர் கூட்டுறவு விதிகளின் கீழ் சரிபார்க்கப்பட்டது.",
     requestWorkerNow: "இப்போதே கோருங்கள் →",
 
     // Footer
-    footerTagline: "தொழில்நுட்பம் கூட்டுறவு தொழிலாளியை மாற்றக்கூடாது. தொழில்நுட்பம் தொழிலாளியை வெளிப்படையாகவும் நியாயமாகவும் மாற்ற வேண்டும்.",
-    copyrightNotice: "© 2026 CO-OP OS — ஸ்மார்ட் இந்தியா ஹேக்கத்தான் முன்மாதிரி.",
+    footerTagline:
+      "தொழில்நுட்பம் கூட்டுறவு தொழிலாளியை மாற்றக்கூடாது. தொழில்நுட்பம் தொழிலாளியை வெளிப்படையாகவும் நியாயமாகவும் மாற்ற வேண்டும்.",
+    copyrightNotice:
+      "© 2026 CO-OP OS — ஸ்மார்ட் இந்தியா ஹேக்கத்தான் முன்மாதிரி.",
     platformViewsTitle: "தளத்தின் பகுதிகள்",
     coreInnovationsTitle: "முக்கிய கண்டுபிடிப்புகள்",
     intelligentMatching: "FairMatch™ புத்திசாலித்தன பொருத்தம்",
     opportunityBalanceIndex: "வாய்ப்பு சமத்துவ குறியீடு",
     digitalSkillPassport: "டிஜிட்டல் திறன் பாஸ்போர்ட்",
-    workforceGapAnalysis: "மண்டல தொழிலாளர் இடைவெளி பகுப்பாய்வு"
+    workforceGapAnalysis: "மண்டல தொழிலாளர் இடைவெளி பகுப்பாய்வு",
   },
 
   hi: {
@@ -409,16 +451,20 @@ export const TRANSLATIONS = {
     heroTitleLine1: "विश्वसनीय कुशल श्रमिक खोजें।",
     heroTitleLine2: "बुद्धिमानी से मिलान।",
     heroTitleLine3: "निष्पक्ष अवसर वितरण।",
-    heroSub: "सत्यापित सहकारी श्रमिकों से जुड़ें और समुदाय में सेवा अवसरों का निष्पक्ष वितरण करें — FairMatch™ इंजन द्वारा संचालित।",
+    heroSub:
+      "सत्यापित सहकारी श्रमिकों से जुड़ें और समुदाय में सेवा अवसरों का निष्पक्ष वितरण करें — FairMatch™ इंजन द्वारा संचालित।",
     intentEyebrow: "प्राकृतिक भाषा सेवा इंजन 2.0",
     intentTitle: "आपको किस सेवा की आवश्यकता है?",
-    intentSub: "अपनी समस्या को हिंदी, इंग्लिश या हिंग्लिश में आसान शब्दों में लिखें। FairMatch™ सही वर्कर का चयन करेगा।",
-    inputPlaceholder: 'अपनी समस्या साधारण भाषा में लिखें... उदा. "भाई किचन का नल लीक हो रहा है"',
+    intentSub:
+      "अपनी समस्या को हिंदी, इंग्लिश या हिंग्लिश में आसान शब्दों में लिखें। FairMatch™ सही वर्कर का चयन करेगा।",
+    inputPlaceholder:
+      'अपनी समस्या साधारण भाषा में लिखें... उदा. "भाई किचन का नल लीक हो रहा है"',
     findRightWorkerBtn: "सही वर्कर खोजें",
     tryExamples: "उदाहरण वाक्य:",
     household: "घरेलू",
     institution: "संस्थान / व्यावसायिक",
-    institutionNotice: "संस्थगत मोड: बहु-वर्कर एवं टीम आवश्यकताओं का समर्थन करता है।",
+    institutionNotice:
+      "संस्थगत मोड: बहु-वर्कर एवं टीम आवश्यकताओं का समर्थन करता है।",
 
     // How It Works & Core Philosophy
     howItWorksTitle: "CO-OP OS कैसे काम करता है",
@@ -444,7 +490,8 @@ export const TRANSLATIONS = {
 
     // Match Results & Worker Cards
     resultsTitle: "सर्वश्रेष्ठ सहकारी श्रमिक मिलान",
-    resultsSub: "कौशल, विश्वसनीयता, दूरी और अवसर समता (15%) के आधार पर रैंक किया गया।",
+    resultsSub:
+      "कौशल, विश्वसनीयता, दूरी और अवसर समता (15%) के आधार पर रैंक किया गया।",
     fairMatchScoreLabel: "FairMatch™ स्कोर",
     whyThisWorker: "यह वर्कर क्यों?",
     whyThisMatch: "यह मिलान क्यों?",
@@ -465,7 +512,8 @@ export const TRANSLATIONS = {
     traditionalVsFairMatchTitle: "पारंपरिक मार्केटप्लेस vs CO-OP FairMatch™",
     fairMatchOn: "FairMatch सक्रिय (निष्पक्ष वितरण)",
     fairMatchOff: "FairMatch निष्क्रिय (पारंपरिक एकाधिकार)",
-    whyNotHighestRatedBtn: "सबसे अधिक रेटिंग वाले वर्कर को क्यों नहीं चुना गया?",
+    whyNotHighestRatedBtn:
+      "सबसे अधिक रेटिंग वाले वर्कर को क्यों नहीं चुना गया?",
 
     // Skill Passport
     passportHeader: "आधिकारिक वर्कर कौशल पासपोर्ट",
@@ -506,7 +554,8 @@ export const TRANSLATIONS = {
     workerPortalEyebrow: "वर्कर पोर्टल",
     workloadCapacityLabel: "वर्तमान कार्यभार क्षमता",
     lowWorkloadBalanced: "कम कार्यभार (संतुलित)",
-    fairMatchActiveHint: "FairMatch™ सक्रिय है: आप नई प्लंबिंग सेवाओं के लिए प्राथमिकता उम्मीदवार हैं।",
+    fairMatchActiveHint:
+      "FairMatch™ सक्रिय है: आप नई प्लंबिंग सेवाओं के लिए प्राथमिकता उम्मीदवार हैं।",
     todaysSchedule: "आज का शेड्यूल",
     jobsLabel: "कार्य",
     completedUpcoming: "2 पूर्ण • 1 आगामी",
@@ -515,7 +564,8 @@ export const TRANSLATIONS = {
     reliabilityScore: "विश्वसनीयता स्कोर",
     onTimeRecord: "94% समय पर रिकॉर्ड",
     pendingDispatchCount: "आने वाले अनुरोध",
-    emptyRequests: "आपने इस विंडो के सभी आने वाले अनुरोधों को संसाधित कर लिया है।",
+    emptyRequests:
+      "आपने इस विंडो के सभी आने वाले अनुरोधों को संसाधित कर लिया है।",
     customerLabel: "ग्राहक",
     locationLabel: "स्थान",
     durationLabel: "अवधि",
@@ -526,27 +576,31 @@ export const TRANSLATIONS = {
     coopAnalyticsEyebrow: "सहकारी महासंघ विश्लेषिकी",
     liveApiBadge: "लाइव API डेटा",
     demoDataBadge: "सिमुलेशन डेटा",
-    coopPulseDesc: "सहकारी समितियों को अवसर वितरण संतुलित करने और श्रमिकों के कल्याण की रक्षा करने वाला रीयल-टाइम सिस्टम।",
+    coopPulseDesc:
+      "सहकारी समितियों को अवसर वितरण संतुलित करने और श्रमिकों के कल्याण की रक्षा करने वाला रीयल-टाइम सिस्टम।",
     optimalDistribution: "सर्वश्रेष्ठ निष्पक्ष वितरण",
     activeVerifiedWorkers: "सक्रिय सत्यापित श्रमिक",
     monthlyRequests: "इस माह के सेवा अनुरोध",
     jobsCompleted: "सफलतापूर्वक पूर्ण कार्य",
     fairDistributionRate: "निष्पक्ष वितरण दर",
     workforceOpportunityDistribution: "समूह अनुसार अवसर वितरण",
-    fairMatchAllocationExplanation: "FairMatch नए कार्यों का आवंटन करते समय अवसर वितरण का ध्यान रखता है, जिससे एकाधिकार रुकता है।",
+    fairMatchAllocationExplanation:
+      "FairMatch नए कार्यों का आवंटन करते समय अवसर वितरण का ध्यान रखता है, जिससे एकाधिकार रुकता है।",
     capacityNeeded: "आवश्यक क्षमता",
     recruitmentRecommended: "सहकारी भर्ती के लिए अनुशंसित अतिरिक्त श्रमिक",
 
     // Traditional vs FairMatch
     matchingDemoEyebrow: "मिलान दर्शन का प्रदर्शन",
-    matchingDemoDesc: "कमर्शियल एग्रीगेटर और CO-OP OS के अवसर संतुलन में अंतर देखने के लिए FairMatch ON / OFF बदलें।",
+    matchingDemoDesc:
+      "कमर्शियल एग्रीगेटर और CO-OP OS के अवसर संतुलन में अंतर देखने के लिए FairMatch ON / OFF बदलें।",
     recommendedDispatchCandidate: "अनुशंसित प्रेषण उम्मीदवार",
     fairMatchSelectedDesc: "FairMatch™ द्वारा चयनित",
     traditionalSelectedDesc: "पारंपरिक रेटिंग द्वारा चयनित",
     fairMatchBalancedTitle: "FAIRMATCH अवसर वितरण (संतुलित)",
     traditionalInequitableTitle: "पारंपरिक एकाधिकार (असंतुलित)",
     shareLabel: "हिस्सा",
-    philosophyDisclaimer: "मिलान दर्शन मेट्रिक्स का प्रदर्शन। यह स्पष्ट रूप से दिखाता है कि FairMatch श्रमिक कल्याण की रक्षा कैसे करता है।",
+    philosophyDisclaimer:
+      "मिलान दर्शन मेट्रिक्स का प्रदर्शन। यह स्पष्ट रूप से दिखाता है कि FairMatch श्रमिक कल्याण की रक्षा कैसे करता है।",
 
     // Why Not Highest Rated
     whyNotTitle: "सबसे अधिक रेटिंग वाले वर्कर को क्यों नहीं चुना गया?",
@@ -556,7 +610,8 @@ export const TRANSLATIONS = {
     // Closed Loop Diagram
     selfReinforcingSystem: "स्व-सुदृढ़ीकरण सहकारी प्रणाली",
     closedLoopTitle: "क्लोज्ड-लूप प्लेटफॉर्म इंटेलिजेंस कैसे काम करता है",
-    closedLoopSub: "प्रत्येक पूर्ण कार्य उपयोगी कार्यबल बुद्धिमत्ता बनाता है जो प्रमाण पत्र और FairMatch को सशक्त बनाता है।",
+    closedLoopSub:
+      "प्रत्येक पूर्ण कार्य उपयोगी कार्यबल बुद्धिमत्ता बनाता है जो प्रमाण पत्र और FairMatch को सशक्त बनाता है।",
     step1TitleLoop: "सेवा अनुरोध",
     step1DescLoop: "ग्राहक आसान भाषा में अपनी आवश्यकता बताता है",
     step2TitleLoop: "FairMatch™ इंजन",
@@ -586,15 +641,16 @@ export const TRANSLATIONS = {
     requestWorkerNow: "अभी अनुरोध करें →",
 
     // Footer
-    footerTagline: "प्रौद्योगिकी को सहकारी कार्यकर्ताओं की जगह नहीं लेनी चाहिए। प्रौद्योगिकी को उन्हें अधिक पारदर्शी और सशक्त बनाना चाहिए।",
+    footerTagline:
+      "प्रौद्योगिकी को सहकारी कार्यकर्ताओं की जगह नहीं लेनी चाहिए। प्रौद्योगिकी को उन्हें अधिक पारदर्शी और सशक्त बनाना चाहिए।",
     copyrightNotice: "© 2026 CO-OP OS — स्मार्ट इंडिया हैकथॉन प्रोटोटाइप।",
     platformViewsTitle: "प्लेटफ़ॉर्म दृश्य",
     coreInnovationsTitle: "मुख्य नवाचार",
     intelligentMatching: "FairMatch™ इंटेलिजेंट मिलान",
     opportunityBalanceIndex: "अवसर संतुलन सूचकांक",
     digitalSkillPassport: "डिजिटल कौशल पासपोर्ट",
-    workforceGapAnalysis: "क्षेत्रीय कार्यबल अंतर विश्लेषण"
-  }
+    workforceGapAnalysis: "क्षेत्रीय कार्यबल अंतर विश्लेषण",
+  },
 };
 
 // Persistent Language Helper (saved in localStorage)

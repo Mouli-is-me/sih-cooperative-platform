@@ -4,7 +4,10 @@ import {
   getWorkerById,
   updateWorkerStatus,
 } from "../controllers/workerController.js";
-import { authenticateToken } from "../middleware/authMiddleware.js";
+import {
+  authenticateToken,
+  requireRole,
+} from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -13,6 +16,11 @@ router.get("/", getWorkers);
 // Public: view single worker profile
 router.get("/:id", getWorkerById);
 // Protected: only authenticated users can update worker status
-router.patch("/:id/status", authenticateToken, updateWorkerStatus);
+router.patch(
+  "/:id/status",
+  authenticateToken,
+  requireRole("worker", "cooperative_admin", "platform_admin"),
+  updateWorkerStatus,
+);
 
 export default router;

@@ -53,7 +53,7 @@ const emptyForm = {
 export default function AuthPage({ mode = "login" }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register, isAuthenticated } = useAuth();
+  const { login, register, demoLogin, isAuthenticated } = useAuth();
   const isSignup = mode === "signup";
 
   const [step, setStep] = useState(isSignup ? 1 : 0);
@@ -102,9 +102,15 @@ export default function AuthPage({ mode = "login" }) {
           requestedPath !== "/login"
         ) {
           navigate(requestedPath, { replace: true });
-        } else if (targetRole === "worker" || targetRole === "cooperative_member") {
+        } else if (
+          targetRole === "worker" ||
+          targetRole === "cooperative_member"
+        ) {
           navigate("/worker", { replace: true });
-        } else if (targetRole === "cooperative_admin" || targetRole === "platform_admin") {
+        } else if (
+          targetRole === "cooperative_admin" ||
+          targetRole === "platform_admin"
+        ) {
           navigate("/cooperative", { replace: true });
         } else {
           navigate("/customer", { replace: true });
@@ -131,8 +137,15 @@ export default function AuthPage({ mode = "login" }) {
     if (form.role === "worker" && !form.experienceYears) {
       return setError("Experience years is required for workers.");
     }
-    if (form.password.length < 6) {
-      return setError("Password must be at least 6 characters.");
+    if (
+      form.password.length < 8 ||
+      !/[A-Z]/.test(form.password) ||
+      !/[a-z]/.test(form.password) ||
+      !/\d/.test(form.password)
+    ) {
+      return setError(
+        "Password must be 8+ characters and include uppercase, lowercase, and a number.",
+      );
     }
     if (form.password !== form.confirmPassword) {
       return setError("Passwords do not match.");
@@ -148,7 +161,7 @@ export default function AuthPage({ mode = "login" }) {
           email: form.email,
           phone: form.phone,
           password: form.password,
-          role: "customer"
+          role: "customer",
         });
         setResult(regData.user);
         setStep(3); // Success step for customer
@@ -228,19 +241,94 @@ export default function AuthPage({ mode = "login" }) {
             <div className="auth-proof">
               <CheckCircle2 size={17} /> FairMatch-backed dispatch
             </div>
-            
+
             {/* Demo Mode Box */}
-            <div style={{ marginTop: "40px", padding: "20px", background: "#EEF2FF", borderRadius: "12px", border: "1px solid #C7D2FE" }}>
-              <h3 style={{ fontSize: "14px", color: "#4F46E5", marginBottom: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>Presentation Mode</h3>
-              <p style={{ fontSize: "13px", color: "#4338CA", marginBottom: "16px" }}>Bypass standard authentication to quickly open portals for demonstration.</p>
+            <div
+              style={{
+                marginTop: "40px",
+                padding: "20px",
+                background: "#EEF2FF",
+                borderRadius: "12px",
+                border: "1px solid #C7D2FE",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "14px",
+                  color: "#4F46E5",
+                  marginBottom: "12px",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Presentation Mode
+              </h3>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#4338CA",
+                  marginBottom: "16px",
+                }}
+              >
+                Bypass standard authentication to quickly open portals for
+                demonstration.
+              </p>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <button type="button" onClick={() => handleDemoLogin("customer")} style={{ flex: 1, padding: "8px 12px", background: "#fff", border: "1px solid #C7D2FE", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#4F46E5", cursor: "pointer" }}>Demo Customer</button>
-                <button type="button" onClick={() => handleDemoLogin("worker")} style={{ flex: 1, padding: "8px 12px", background: "#fff", border: "1px solid #C7D2FE", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#4F46E5", cursor: "pointer" }}>Demo Worker</button>
-                <button type="button" onClick={() => handleDemoLogin("admin")} style={{ flex: 1, padding: "8px 12px", background: "#fff", border: "1px solid #C7D2FE", borderRadius: "6px", fontSize: "13px", fontWeight: 600, color: "#4F46E5", cursor: "pointer" }}>Demo Admin</button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin("customer")}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    background: "#fff",
+                    border: "1px solid #C7D2FE",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#4F46E5",
+                    cursor: "pointer",
+                  }}
+                >
+                  Demo Customer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin("worker")}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    background: "#fff",
+                    border: "1px solid #C7D2FE",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#4F46E5",
+                    cursor: "pointer",
+                  }}
+                >
+                  Demo Worker
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDemoLogin("admin")}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    background: "#fff",
+                    border: "1px solid #C7D2FE",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#4F46E5",
+                    cursor: "pointer",
+                  }}
+                >
+                  Demo Admin
+                </button>
               </div>
             </div>
           </div>
-          
+
           <form className="auth-card" onSubmit={handleLogin}>
             <div className="auth-card-heading">
               <LockKeyhole size={20} />
@@ -249,38 +337,89 @@ export default function AuthPage({ mode = "login" }) {
                 <h2>Sign in</h2>
               </div>
             </div>
-            
-            <div className="role-selector" style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px', border: form.role === 'customer' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '6px', flex: 1, fontSize: '13px', fontWeight: 600 }}>
-                <input 
-                  type="radio" 
-                  name="loginRole" 
-                  value="customer" 
+
+            <div
+              className="role-selector"
+              style={{ display: "flex", gap: "8px", marginBottom: "20px" }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  padding: "8px",
+                  border:
+                    form.role === "customer"
+                      ? "2px solid #4F46E5"
+                      : "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  flex: 1,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="loginRole"
+                  value="customer"
                   checked={form.role === "customer"}
                   onChange={() => update("role", "customer")}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
                 Customer
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px', border: form.role === 'worker' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '6px', flex: 1, fontSize: '13px', fontWeight: 600 }}>
-                <input 
-                  type="radio" 
-                  name="loginRole" 
-                  value="worker" 
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  padding: "8px",
+                  border:
+                    form.role === "worker"
+                      ? "2px solid #4F46E5"
+                      : "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  flex: 1,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="loginRole"
+                  value="worker"
                   checked={form.role === "worker"}
                   onChange={() => update("role", "worker")}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
                 Worker
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: '8px', border: form.role === 'admin' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '6px', flex: 1, fontSize: '13px', fontWeight: 600 }}>
-                <input 
-                  type="radio" 
-                  name="loginRole" 
-                  value="admin" 
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  padding: "8px",
+                  border:
+                    form.role === "admin"
+                      ? "2px solid #4F46E5"
+                      : "1px solid #E2E8F0",
+                  borderRadius: "6px",
+                  flex: 1,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="loginRole"
+                  value="admin"
                   checked={form.role === "admin"}
                   onChange={() => update("role", "admin")}
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                 />
                 Admin
               </label>
@@ -292,7 +431,7 @@ export default function AuthPage({ mode = "login" }) {
                 type="email"
                 value={form.email}
                 onChange={(event) => update("email", event.target.value)}
-                placeholder={`Enter your ${form.role || ''} email`}
+                placeholder={`Enter your ${form.role || ""} email`}
                 required
               />
             </label>
@@ -316,13 +455,61 @@ export default function AuthPage({ mode = "login" }) {
               {submitting ? "Signing in..." : "Sign in"}{" "}
               <ArrowRight size={17} />
             </button>
-            <div className="auth-switch" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <span style={{ fontSize: '13px', color: '#64748B', textAlign: 'center' }}>New to CO-OP OS?</span>
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button type="button" onClick={() => { update("role", "customer"); navigate("/signup"); }} style={{ flex: 1, padding: "10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+            <div
+              className="auth-switch"
+              style={{
+                marginTop: "24px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: "13px",
+                  color: "#64748B",
+                  textAlign: "center",
+                }}
+              >
+                New to CO-OP OS?
+              </span>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    update("role", "customer");
+                    navigate("/signup");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    color: "#334155",
+                    cursor: "pointer",
+                  }}
+                >
                   Sign up as Customer
                 </button>
-                <button type="button" onClick={() => { update("role", "worker"); navigate("/signup"); }} style={{ flex: 1, padding: "10px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px", fontWeight: 600, color: "#334155", cursor: "pointer" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    update("role", "worker");
+                    navigate("/signup");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "10px",
+                    background: "#F8FAFC",
+                    border: "1px solid #E2E8F0",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    color: "#334155",
+                    cursor: "pointer",
+                  }}
+                >
                   Sign up as Worker
                 </button>
               </div>
@@ -341,14 +528,20 @@ export default function AuthPage({ mode = "login" }) {
             <span className="auth-kicker">
               <UserPlus size={15} /> ACCOUNT REGISTRATION
             </span>
-            <h1>{form.role === "worker" ? "Join the cooperative workforce." : "Create your customer account."}</h1>
+            <h1>
+              {form.role === "worker"
+                ? "Join the cooperative workforce."
+                : "Create your customer account."}
+            </h1>
             <p>
-              {form.role === "worker" 
-                ? "Build a verified Skill Passport and start receiving fair opportunities." 
+              {form.role === "worker"
+                ? "Build a verified Skill Passport and start receiving fair opportunities."
                 : "Register to request verified cooperative workers for your service needs."}
             </p>
           </div>
-          {form.role === "worker" && <div className="step-indicator">Step {step} of 2</div>}
+          {form.role === "worker" && (
+            <div className="step-indicator">Step {step} of 2</div>
+          )}
         </div>
         {form.role === "worker" && step < 3 && (
           <div className="signup-progress">
@@ -365,27 +558,58 @@ export default function AuthPage({ mode = "login" }) {
                 <h2>Create your account</h2>
               </div>
             </div>
-            
-            <div className="role-selector" style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '12px', border: form.role === 'customer' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '8px', flex: 1 }}>
-                <input 
-                  type="radio" 
-                  name="role" 
-                  value="customer" 
+
+            <div
+              className="role-selector"
+              style={{ display: "flex", gap: "12px", marginBottom: "24px" }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  padding: "12px",
+                  border:
+                    form.role === "customer"
+                      ? "2px solid #4F46E5"
+                      : "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  flex: 1,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value="customer"
                   checked={form.role === "customer"}
                   onChange={() => update("role", "customer")}
-                  style={{ width: 'auto', marginBottom: 0 }}
+                  style={{ width: "auto", marginBottom: 0 }}
                 />
                 Customer
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '12px', border: form.role === 'worker' ? '2px solid #4F46E5' : '1px solid #E2E8F0', borderRadius: '8px', flex: 1 }}>
-                <input 
-                  type="radio" 
-                  name="role" 
-                  value="worker" 
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  padding: "12px",
+                  border:
+                    form.role === "worker"
+                      ? "2px solid #4F46E5"
+                      : "1px solid #E2E8F0",
+                  borderRadius: "8px",
+                  flex: 1,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="role"
+                  value="worker"
                   checked={form.role === "worker"}
                   onChange={() => update("role", "worker")}
-                  style={{ width: 'auto', marginBottom: 0 }}
+                  style={{ width: "auto", marginBottom: 0 }}
                 />
                 Service Worker
               </label>
@@ -428,9 +652,9 @@ export default function AuthPage({ mode = "login" }) {
                   type="password"
                   value={form.password}
                   onChange={(event) => update("password", event.target.value)}
-                  placeholder="Create a password (min 6 chars)"
+                  placeholder="Create a password (min 8 chars, upper/lowercase and number)"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </label>
               <label>
@@ -445,14 +669,16 @@ export default function AuthPage({ mode = "login" }) {
                   required
                 />
               </label>
-              
+
               {form.role === "worker" && (
                 <>
                   <label>
                     Primary trade
                     <select
                       value={form.category}
-                      onChange={(event) => update("category", event.target.value)}
+                      onChange={(event) =>
+                        update("category", event.target.value)
+                      }
                     >
                       <option value="plumbing">Plumbing</option>
                       <option value="electrical">Electrical</option>
@@ -474,28 +700,37 @@ export default function AuthPage({ mode = "login" }) {
                       required={form.role === "worker"}
                     />
                   </label>
-                  <label style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ gridColumn: "1 / -1" }}>
                     Cooperative / society name
                     <input
                       value={form.cooperative}
-                      onChange={(event) => update("cooperative", event.target.value)}
+                      onChange={(event) =>
+                        update("cooperative", event.target.value)
+                      }
                       placeholder="Optional if joining independently"
                     />
                   </label>
                 </>
               )}
             </div>
-            
+
             {error && <div className="auth-error">{error}</div>}
-            <button className="auth-primary-btn" type="submit" disabled={submitting}>
-              {submitting 
-                ? "Processing..." 
-                : form.role === "worker" 
-                  ? "Continue to verification" 
-                  : "Create Account"} 
+            <button
+              className="auth-primary-btn"
+              type="submit"
+              disabled={submitting}
+            >
+              {submitting
+                ? "Processing..."
+                : form.role === "worker"
+                  ? "Continue to verification"
+                  : "Create Account"}
               <ArrowRight size={17} />
             </button>
-            <p className="auth-switch" style={{ marginTop: '16px', textAlign: 'center' }}>
+            <p
+              className="auth-switch"
+              style={{ marginTop: "16px", textAlign: "center" }}
+            >
               Already have an account?{" "}
               <button type="button" onClick={() => navigate("/signin")}>
                 Sign in
@@ -503,7 +738,7 @@ export default function AuthPage({ mode = "login" }) {
             </p>
           </form>
         )}
-        
+
         {step === 2 && form.role === "worker" && (
           <form className="signup-card" onSubmit={handleSkillSubmit}>
             <div className="auth-card-heading">
@@ -561,7 +796,7 @@ export default function AuthPage({ mode = "login" }) {
             </button>
           </form>
         )}
-        
+
         {step === 3 && (
           <div className="signup-card success-card">
             <div className="success-icon">
@@ -569,16 +804,17 @@ export default function AuthPage({ mode = "login" }) {
             </div>
             <span className="auth-kicker">REGISTRATION COMPLETE</span>
             <h2>Welcome, {result?.full_name || form.name}.</h2>
-            
+
             {form.role === "worker" ? (
               <>
                 <p>
-                  Your worker profile is verified and your initial Skill Passport is
-                  ready.
+                  Your worker profile is verified and your initial Skill
+                  Passport is ready.
                 </p>
                 <div className="verification-summary">
                   <span>
-                    Skill test score<strong>{result?.skillTestScore ?? 85}%</strong>
+                    Skill test score
+                    <strong>{result?.skillTestScore ?? 85}%</strong>
                   </span>
                   <span>
                     Primary trade<strong>{form.category}</strong>
@@ -595,7 +831,8 @@ export default function AuthPage({ mode = "login" }) {
             ) : (
               <>
                 <p>
-                  Your customer account has been created. You can now request verified cooperative workers.
+                  Your customer account has been created. You can now request
+                  verified cooperative workers.
                 </p>
                 <button
                   className="auth-primary-btn"

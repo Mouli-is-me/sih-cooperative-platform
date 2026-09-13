@@ -15,6 +15,13 @@ const API_BASE_URL = rawApiUrl
     : "http://localhost:5000/api";
 const API_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, "");
 
+export const normalizeUrgency = (urgency) => {
+  const normalized = String(urgency || "").toUpperCase();
+  if (normalized === "HIGH" || normalized === "URGENT") return "Urgent";
+  if (normalized === "EMERGENCY") return "Emergency";
+  return "Standard";
+};
+
 const getAuthHeaders = () => {
   const token =
     typeof window !== "undefined"
@@ -173,12 +180,25 @@ export const api = {
   },
 
   async getBackendOverview() {
+    if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
+      return {
+        apiIndex: { service: "CO-OP OS API", status: "DEMO" },
+        health: { status: "DEMO" },
+        workers: WORKERS,
+        analytics: COOPERATIVE_PULSE_METRICS,
+      };
+    }
+
     try {
       const [rootRes, healthRes, workersRes, analyticsRes] = await Promise.all([
         fetchWithTimeout(`${API_ORIGIN}/`, {}, 10000),
         fetchWithTimeout(`${API_BASE_URL}/health`, {}, 10000),
         fetchWithTimeout(`${API_BASE_URL}/workers`, {}, 10000),
-        fetchWithTimeout(`${API_BASE_URL}/cooperative/analytics`, {}, 10000),
+        fetchWithTimeout(
+          `${API_BASE_URL}/cooperative/analytics`,
+          { headers: getAuthHeaders() },
+          10000,
+        ),
       ]);
 
       if (!healthRes.ok)
@@ -437,13 +457,26 @@ export const api = {
 
   // Create Service Request
   async createServiceRequest(requestData) {
+    if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
+      return {
+        ...requestData,
+        id: `demo-req-${Date.now()}`,
+        urgency: normalizeUrgency(requestData.urgency),
+        status: requestData.status || "CREATED",
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     try {
       const res = await fetchWithTimeout(
         `${API_BASE_URL}/service-requests`,
         {
           method: "POST",
           headers: getAuthHeaders(),
-          body: JSON.stringify(requestData),
+          body: JSON.stringify({
+            ...requestData,
+            urgency: normalizeUrgency(requestData.urgency),
+          }),
         },
         12000,
       );
@@ -464,6 +497,10 @@ export const api = {
 
   // Transition Request Status
   async updateRequestStatus(id, targetStatus, currentStatus, extra = {}) {
+    if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
+      return { id, status: targetStatus, currentStatus, ...extra };
+    }
+
     try {
       const res = await fetchWithTimeout(
         `${API_BASE_URL}/service-requests/${id}/status`,
@@ -496,10 +533,14 @@ export const api = {
 
   // Cooperative Analytics Endpoint
   async getCooperativePulse() {
+    if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
+      return COOPERATIVE_PULSE_METRICS;
+    }
+
     try {
       const res = await fetchWithTimeout(
         `${API_BASE_URL}/cooperative/analytics`,
-        {},
+        { headers: getAuthHeaders() },
         12000,
       );
       if (res.ok) {

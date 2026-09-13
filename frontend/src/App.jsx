@@ -21,6 +21,7 @@ import BackendDashboardPage from "./pages/BackendDashboardPage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import DemoControls from "./components/DemoControls.jsx";
 
 import { parseServiceIntent } from "./services/intentParser.js";
 import { api, checkBackendHealth } from "./services/api.js";
@@ -131,22 +132,24 @@ function AppContent() {
     if (activeReq) {
       // Transition through the backend state machine in order.
       const requestId = activeReq.id || activeReq._id;
-      await api.updateRequestStatus(requestId, "MATCHED");
-      await api.updateRequestStatus(requestId, "WORKER_ACCEPTED", "MATCHED", {
-        assignedWorkerId: worker.id,
-      });
+      try {
+        await api.updateRequestStatus(requestId, "MATCHED");
+        await api.updateRequestStatus(requestId, "WORKER_ACCEPTED", "MATCHED", {
+          assignedWorkerId: worker.id,
+        });
+      } catch (error) {
+        console.warn(
+          "[Request Worker] Continuing with local assignment:",
+          error,
+        );
+      }
 
-      setCustomerRequests(
-        customerRequests.map((req) => {
-          if (req.id === activeReq.id) {
-            return {
-              ...req,
-              worker: worker,
-              status: "WORKER_ACCEPTED",
-            };
-          }
-          return req;
-        }),
+      setCustomerRequests((previous) =>
+        previous.map((req) =>
+          (req.id || req._id) === requestId
+            ? { ...req, worker, status: "WORKER_ACCEPTED" }
+            : req,
+        ),
       );
     } else {
       const newReq = {
@@ -228,7 +231,12 @@ function AppContent() {
       };
     }, [id]);
 
-    if (!targetWorker) return <div style={{ padding: '60px', textAlign: 'center' }}>Loading worker profile...</div>;
+    if (!targetWorker)
+      return (
+        <div style={{ padding: "60px", textAlign: "center" }}>
+          Loading worker profile...
+        </div>
+      );
 
     return (
       <WorkerProfilePage
@@ -244,6 +252,14 @@ function AppContent() {
     <div className={`app-root lang-${currentLang}`}>
       {/* Main Navbar */}
       <Navbar currentLang={currentLang} onChangeLang={handleLanguageChange} />
+
+      <DemoControls
+        activeView={location.pathname}
+        onNavigate={navigate}
+        onSelectPreset={(query) => handlePublicIntent(query, "Household")}
+        currentLang={currentLang}
+        onChangeLang={handleLanguageChange}
+      />
 
       {/* React Router Views */}
       <main className="main-content">
@@ -350,12 +366,7 @@ function AppContent() {
             element={<Navigate to="/signup" replace />}
           />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
-          <Route
-            path="*"
-            element={
-              <Navigate to="/" replace />
-            }
-          />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
 

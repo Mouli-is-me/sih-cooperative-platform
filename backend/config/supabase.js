@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { transitionRequest } from "../services/lifecycle.js";
 
 dotenv.config();
 
@@ -117,7 +118,7 @@ export const createServiceRequestInSupabase = async (reqData) => {
   try {
     const payload = {
       id: reqData.id || `req-${Date.now()}`,
-      customer_id: reqData.customerId,
+      customer_id: reqData.customer_id || reqData.customerId,
       customer_type: reqData.customerType || "Household",
       service_category: reqData.serviceCategory,
       task_detail: reqData.taskDetail,
@@ -160,15 +161,39 @@ export const updateServiceRequestStatusInSupabase = async (
   status,
   userId,
   isAdmin = false,
+  assignedWorkerId = null,
 ) => {
   if (!supabase) return null;
   try {
-    let query = supabase
+    let lookup = supabase.from("service_requests").select("*").eq("id", id);
+    if (!isAdmin) lookup = lookup.eq("customer_id", userId);
+    const { data: current, error: lookupError } = await lookup.single();
+    if (lookupError || !current) return null;
+
+    const transitionResult = transitionRequest(
+      {
+        status: current.status,
+        transitionTimestamps: current.transition_timestamps || {},
+      },
+      status,
+    );
+    if (!transitionResult.success) {
+      return { transitionError: transitionResult.error };
+    }
+
+    const update = {
+      status,
+      transition_timestamps: transitionResult.request.transitionTimestamps,
+      updated_at: new Date().toISOString(),
+    };
+    if (assignedWorkerId) update.assigned_worker_id = assignedWorkerId;
+
+    const { data, error } = await supabase
       .from("service_requests")
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    if (!isAdmin) query = query.eq("customer_id", userId);
-    const { data, error } = await query.select().single();
+      .update(update)
+      .eq("id", id)
+      .select()
+      .single();
 
     if (error) return null;
     return data;

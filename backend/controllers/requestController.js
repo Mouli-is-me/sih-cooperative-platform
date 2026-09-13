@@ -125,7 +125,11 @@ export const updateRequestStatus = async (req, res) => {
       status,
       req.user.id,
       req.user.role === "platform_admin",
+      assignedWorkerId,
     );
+    if (sbResult?.transitionError) {
+      return res.status(400).json({ error: sbResult.transitionError });
+    }
     if (sbResult) return res.status(200).json(sbResult);
     if (process.env.NODE_ENV === "production") {
       return res.status(404).json({
@@ -138,9 +142,9 @@ export const updateRequestStatus = async (req, res) => {
   try {
     const fallbackRequest = FALLBACK_REQUESTS.get(id);
     const currentReq = fallbackRequest || {
-          id,
-          status: req.body.currentStatus || STAGES.CREATED,
-        };
+      id,
+      status: req.body.currentStatus || STAGES.CREATED,
+    };
 
     const transitionResult = transitionRequest(currentReq, status);
 

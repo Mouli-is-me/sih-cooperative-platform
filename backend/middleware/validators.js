@@ -42,10 +42,14 @@ export const createServiceRequestSchema = z.object({
     .enum(["Household", "Institution"])
     .optional()
     .default("Household"),
-  urgency: z
-    .enum(["Standard", "Urgent", "Emergency"])
-    .optional()
-    .default("Standard"),
+  urgency: z.preprocess(
+    (value) => {
+      if (value === "STANDARD") return "Standard";
+      if (value === "HIGH") return "Urgent";
+      return value;
+    },
+    z.enum(["Standard", "Urgent", "Emergency"]).optional().default("Standard"),
+  ),
   rawText: z.string().optional(),
 });
 
@@ -58,6 +62,16 @@ export const updateRequestStatusSchema = z.object({
     "JOB_STARTED",
     "COMPLETED",
   ]),
+  currentStatus: z
+    .enum([
+      "CREATED",
+      "MATCHED",
+      "WORKER_ACCEPTED",
+      "EN_ROUTE",
+      "JOB_STARTED",
+      "COMPLETED",
+    ])
+    .optional(),
   assignedWorkerId: z.string().optional(),
 });
 

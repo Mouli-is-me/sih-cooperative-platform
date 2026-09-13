@@ -82,9 +82,12 @@ export const register = async (req, res) => {
       savedUser = newUser;
     }
 
+    let linkedWorkerId = null;
+
     // If role is worker, automatically initialize corresponding worker profile in workers table
     if (role === "worker") {
       const workerId = `worker-${Date.now()}`;
+      linkedWorkerId = workerId;
       const workerPayload = {
         id: workerId,
         user_id: userId,
@@ -120,6 +123,7 @@ export const register = async (req, res) => {
         email: savedUser.email,
         role: savedUser.role,
         fullName: savedUser.full_name,
+        workerId: linkedWorkerId,
       },
       JWT_SECRET,
       { expiresIn: "7d" },

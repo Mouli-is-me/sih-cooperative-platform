@@ -17,7 +17,13 @@ const formatWorker = (w) => {
     onTimeRate: w.onTimeRate ?? w.on_time_rate ?? 95,
     reliabilityScore: w.reliabilityScore ?? w.reliability_score ?? 95,
     workloadCapacity: w.workloadCapacity ?? w.workload_capacity ?? 30,
+    workloadStatus: w.workloadStatus ?? w.workload_status ?? "Low",
+    availability: w.availability ?? "Available Now",
     isAvailable: w.isAvailable ?? w.is_available ?? true,
+    jobsCompleted7Days: w.jobsCompleted7Days ?? w.jobs_completed_7days ?? 0,
+    jobsCompleted30Days: w.jobsCompleted30Days ?? w.jobs_completed_30days ?? 0,
+    earnings7Days: w.earnings7Days ?? w.earnings_7days ?? 0,
+    earnings30Days: w.earnings30Days ?? w.earnings_30days ?? 0,
     skillFitPercent: w.skillFitPercent ?? w.skill_fit_percent ?? 90,
     verifiedSkillLevel:
       w.verifiedSkillLevel ?? w.verified_skill_level ?? "Advanced",
@@ -107,7 +113,10 @@ export const getWorkerById = async (req, res) => {
   }
 
   const match = SEED_WORKERS.find(
-    (w) => w.coopId === id || w.name.toLowerCase().includes(id.toLowerCase()) || w.id === id,
+    (w) =>
+      w.coopId === id ||
+      w.name.toLowerCase().includes(id.toLowerCase()) ||
+      w.id === id,
   );
   if (!match)
     return res.status(404).json({ error: "Worker not found in database" });
@@ -151,10 +160,13 @@ export const updateWorkerStatus = async (req, res) => {
   }
 
   const match = SEED_WORKERS.find(
-    (w) => w.coopId === id || w.name.toLowerCase().includes(id.toLowerCase()) || w.id === id,
+    (w) =>
+      w.coopId === id ||
+      w.name.toLowerCase().includes(id.toLowerCase()) ||
+      w.id === id,
   );
   if (!match) return res.status(404).json({ error: "Worker not found" });
-  
+
   match.status = normalizedStatus;
   match.isAvailable = isAvailable;
   match.availability = availabilityText;

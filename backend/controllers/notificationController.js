@@ -45,14 +45,27 @@ export const markNotificationRead = async (req, res) => {
           .select()
           .single();
 
-        if (!error && data) return res.status(200).json({ success: true, data });
+        if (!error && data)
+          return res.status(200).json({ success: true, data });
       } catch (err) {}
     }
 
-    const match = MEMORY_NOTIFICATIONS.find((n) => n.id === id && n.user_id === userId);
-    if (match) match.read_status = true;
+    const match = MEMORY_NOTIFICATIONS.find(
+      (n) => n.id === id && n.user_id === userId,
+    );
+    if (!match) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: "NOTIFICATION_NOT_FOUND",
+          message: "Notification not found",
+        },
+      });
+    }
 
-    return res.status(200).json({ success: true, data: match || { id, read_status: true } });
+    match.read_status = true;
+
+    return res.status(200).json({ success: true, data: match });
   } catch (err) {
     return res.status(500).json({
       success: false,
