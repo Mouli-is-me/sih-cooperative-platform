@@ -3,7 +3,12 @@
 // Demo Mode: Gracefully falls back to local deterministic mock state if offline.
 
 import { WORKERS, COOPERATIVE_PULSE_METRICS } from "./mockData.js";
+
 import { getFairMatches } from "./matching.js";
+
+// ============================================================
+// API BASE URL
+// ============================================================
 
 const rawApiUrl = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -35,6 +40,10 @@ export const normalizeUrgency = (urgency) => {
   return "Standard";
 };
 
+// ============================================================
+// AUTH HEADERS
+// ============================================================
+
 const getAuthHeaders = () => {
   const token =
     typeof window !== "undefined"
@@ -44,12 +53,17 @@ const getAuthHeaders = () => {
   return token
     ? {
         "Content-Type": "application/json",
+
         Authorization: `Bearer ${token}`,
       }
     : {
         "Content-Type": "application/json",
       };
 };
+
+// ============================================================
+// SAFE JSON
+// ============================================================
 
 const safeJson = async (res) => {
   try {
@@ -60,6 +74,10 @@ const safeJson = async (res) => {
     return {};
   }
 };
+
+// ============================================================
+// FETCH WITH TIMEOUT
+// ============================================================
 
 const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
   const controller = new AbortController();
@@ -74,6 +92,10 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
       ...options,
       signal: controller.signal,
     });
+
+    // --------------------------------------------------------
+    // Authentication expiry
+    // --------------------------------------------------------
 
     if (res.status === 401 || res.status === 403) {
       if (typeof window !== "undefined") {
@@ -99,6 +121,10 @@ const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
   }
 };
 
+// ============================================================
+// LIVE BACKEND FLAG
+// ============================================================
+
 export let isLiveBackendAvailable = false;
 
 // ============================================================
@@ -123,6 +149,7 @@ export const checkBackendHealth = async () => {
 
     if (res.ok) {
       isLiveBackendAvailable = true;
+
       return true;
     }
   } catch (err) {
@@ -137,18 +164,20 @@ export const checkBackendHealth = async () => {
 // ============================================================
 
 export const api = {
-  // ============================================================
+  // ==========================================================
   // AUTHENTICATION
-  // ============================================================
+  // ==========================================================
 
   async login(credentials) {
     const res = await fetchWithTimeout(
       `${API_BASE_URL}/auth/login`,
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify(credentials),
       },
       15000,
@@ -169,15 +198,16 @@ export const api = {
     return data;
   },
 
-  // ============================================================
+  // ==========================================================
   // WORKER HARDWARE DEVICE
-  // ============================================================
+  // ==========================================================
 
   async getHardwareDevice(deviceCode = "DEV-001") {
     const res = await fetchWithTimeout(
       `${API_BASE_URL}/hardware/dashboard/${deviceCode}`,
       {
         method: "GET",
+
         headers: getAuthHeaders(),
       },
       10000,
@@ -194,14 +224,9 @@ export const api = {
     return data;
   },
 
-  // ------------------------------------------------------------
-  // Send command to physical device
-  //
-  // Valid states:
-  // AVAILABLE
-  // JOB_REQUESTED
-  // JOB_ACCEPTED
-  // ------------------------------------------------------------
+  // ==========================================================
+  // SEND COMMAND TO PHYSICAL DEVICE
+  // ==========================================================
 
   async setHardwareCommand(deviceCode = "DEV-001", state, jobId = null) {
     const validStates = ["AVAILABLE", "JOB_REQUESTED", "JOB_ACCEPTED"];
@@ -214,7 +239,9 @@ export const api = {
       `${API_BASE_URL}/hardware/dashboard/${deviceCode}/command`,
       {
         method: "PATCH",
+
         headers: getAuthHeaders(),
+
         body: JSON.stringify({
           state,
           jobId,
@@ -234,9 +261,9 @@ export const api = {
     return data;
   },
 
-  // ------------------------------------------------------------
-  // Send a job request to DEV-001
-  // ------------------------------------------------------------
+  // ==========================================================
+  // SEND JOB TO HARDWARE
+  // ==========================================================
 
   async sendJobToHardware(jobId, deviceCode = "DEV-001") {
     if (!jobId) {
@@ -246,9 +273,9 @@ export const api = {
     return await this.setHardwareCommand(deviceCode, "JOB_REQUESTED", jobId);
   },
 
-  // ------------------------------------------------------------
-  // Mark hardware job as accepted
-  // ------------------------------------------------------------
+  // ==========================================================
+  // ACCEPT HARDWARE JOB
+  // ==========================================================
 
   async acceptHardwareJob(jobId, deviceCode = "DEV-001") {
     if (!jobId) {
@@ -258,26 +285,118 @@ export const api = {
     return await this.setHardwareCommand(deviceCode, "JOB_ACCEPTED", jobId);
   },
 
-  // ------------------------------------------------------------
-  // Clear current hardware job
-  // ------------------------------------------------------------
+  // ==========================================================
+  // CLEAR HARDWARE JOB
+  // ==========================================================
 
   async clearHardwareJob(deviceCode = "DEV-001") {
     return await this.setHardwareCommand(deviceCode, "AVAILABLE", null);
   },
 
-  // ============================================================
+  // ==========================================================
+  // SIH DEMO HARDWARE STATUS
+  // ==========================================================
+  //
+  // IMPORTANT:
+  // This endpoint is specifically for Demo Mode.
+  //
+  // It does NOT require the normal admin JWT.
+  //
+  // Backend:
+  // GET /api/hardware/test/:deviceCode/status
+  //
+  // ==========================================================
+
+  async getDemoHardwareDevice(deviceCode = "DEV-001") {
+    const res = await fetchWithTimeout(
+      `${API_BASE_URL}/hardware/test/${deviceCode}/status`,
+      {
+        method: "GET",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+      10000,
+    );
+
+    const data = await safeJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.error?.message || `Unable to load demo hardware (${res.status})`,
+      );
+    }
+
+    return data;
+  },
+
+  // ==========================================================
+  // SIH DEMO HARDWARE COMMAND
+  // ==========================================================
+  //
+  // This is used by Demo Mode to control the real ESP32.
+  //
+  // Backend:
+  // PATCH /api/hardware/test/:deviceCode/command
+  //
+  // Valid:
+  // AVAILABLE
+  // JOB_REQUESTED
+  // JOB_ACCEPTED
+  //
+  // ==========================================================
+
+  async setDemoHardwareCommand(deviceCode = "DEV-001", state, jobId = null) {
+    const validStates = ["AVAILABLE", "JOB_REQUESTED", "JOB_ACCEPTED"];
+
+    if (!validStates.includes(state)) {
+      throw new Error(`Invalid hardware state: ${state}`);
+    }
+
+    const res = await fetchWithTimeout(
+      `${API_BASE_URL}/hardware/test/${deviceCode}/command`,
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          state,
+          jobId,
+        }),
+      },
+      10000,
+    );
+
+    const data = await safeJson(res);
+
+    if (!res.ok) {
+      throw new Error(
+        data.error?.message ||
+          `Unable to control demo hardware (${res.status})`,
+      );
+    }
+
+    return data;
+  },
+
+  // ==========================================================
   // REGISTER
-  // ============================================================
+  // ==========================================================
 
   async register(userData) {
     const res = await fetchWithTimeout(
       `${API_BASE_URL}/auth/register`,
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify(userData),
       },
       15000,
@@ -300,15 +419,16 @@ export const api = {
     return data;
   },
 
-  // ============================================================
+  // ==========================================================
   // CURRENT USER
-  // ============================================================
+  // ==========================================================
 
   async getMe(token) {
     const res = await fetchWithTimeout(
       `${API_BASE_URL}/auth/me`,
       {
         method: "GET",
+
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -323,21 +443,25 @@ export const api = {
     return await safeJson(res);
   },
 
-  // ============================================================
+  // ==========================================================
   // WORKER REGISTRATION
-  // ============================================================
+  // ==========================================================
 
   async registerWorker(workerData) {
     const res = await fetchWithTimeout(
       `${API_BASE_URL}/auth/register`,
       {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           ...workerData,
+
           fullName: workerData.name,
+
           role: "worker",
         }),
       },
@@ -354,25 +478,30 @@ export const api = {
 
     return {
       ...data.data.user,
+
       id: data.data.user.id,
     };
   },
 
-  // ============================================================
+  // ==========================================================
   // BACKEND OVERVIEW
-  // ============================================================
+  // ==========================================================
 
   async getBackendOverview() {
     if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
       return {
         apiIndex: {
           service: "CO-OP OS API",
+
           status: "DEMO",
         },
+
         health: {
           status: "DEMO",
         },
+
         workers: WORKERS,
+
         analytics: COOPERATIVE_PULSE_METRICS,
       };
     }
@@ -400,8 +529,11 @@ export const api = {
 
       const [apiIndex, health, workers, analytics] = await Promise.all([
         safeJson(rootRes),
+
         safeJson(healthRes),
+
         workersRes.ok ? safeJson(workersRes) : [],
+
         analyticsRes.ok ? safeJson(analyticsRes) : COOPERATIVE_PULSE_METRICS,
       ]);
 
@@ -419,20 +551,24 @@ export const api = {
       return {
         apiIndex: {
           service: "CO-OP OS API",
+
           status: "OFFLINE",
         },
+
         health: {
           status: "OFFLINE",
         },
+
         workers: WORKERS,
+
         analytics: COOPERATIVE_PULSE_METRICS,
       };
     }
   },
 
-  // ============================================================
+  // ==========================================================
   // WORKERS
-  // ============================================================
+  // ==========================================================
 
   async getWorkers() {
     try {
@@ -485,9 +621,9 @@ export const api = {
     return WORKERS;
   },
 
-  // ============================================================
+  // ==========================================================
   // WORKER STATUS
-  // ============================================================
+  // ==========================================================
 
   async updateWorkerStatus(workerId, status) {
     try {
@@ -495,7 +631,9 @@ export const api = {
         `${API_BASE_URL}/workers/${workerId}/status`,
         {
           method: "PATCH",
+
           headers: getAuthHeaders(),
+
           body: JSON.stringify({
             status,
           }),
@@ -515,6 +653,7 @@ export const api = {
 
       return {
         ...data,
+
         id: data.id || data._id,
       };
     } catch (err) {
@@ -528,14 +667,15 @@ export const api = {
     const match = WORKERS.find((w) => w.id === workerId) || WORKERS[0];
 
     match.status = status;
+
     match.isAvailable = status === "AVAILABLE";
 
     return match;
   },
 
-  // ============================================================
+  // ==========================================================
   // JOBS
-  // ============================================================
+  // ==========================================================
 
   async getJobs(params = {}) {
     try {
@@ -563,7 +703,9 @@ export const api = {
       `${API_BASE_URL}/jobs`,
       {
         method: "POST",
+
         headers: getAuthHeaders(),
+
         body: JSON.stringify(jobData),
       },
       12000,
@@ -585,6 +727,7 @@ export const api = {
       `${API_BASE_URL}/jobs/${jobId}/apply`,
       {
         method: "POST",
+
         headers: getAuthHeaders(),
       },
       12000,
@@ -602,9 +745,9 @@ export const api = {
     return data;
   },
 
-  // ============================================================
+  // ==========================================================
   // NOTIFICATIONS
-  // ============================================================
+  // ==========================================================
 
   async getNotifications() {
     try {
@@ -627,9 +770,9 @@ export const api = {
     };
   },
 
-  // ============================================================
+  // ==========================================================
   // PAYMENTS
-  // ============================================================
+  // ==========================================================
 
   async getPayments(params = {}) {
     try {
@@ -654,9 +797,9 @@ export const api = {
     };
   },
 
-  // ============================================================
+  // ==========================================================
   // ATTENDANCE
-  // ============================================================
+  // ==========================================================
 
   async getAttendance(params = {}) {
     try {
@@ -686,7 +829,9 @@ export const api = {
       `${API_BASE_URL}/attendance/check-in`,
       {
         method: "POST",
+
         headers: getAuthHeaders(),
+
         body: JSON.stringify({
           jobId,
         }),
@@ -702,6 +847,7 @@ export const api = {
       `${API_BASE_URL}/attendance/${attendanceId}/check-out`,
       {
         method: "PATCH",
+
         headers: getAuthHeaders(),
       },
       10000,
@@ -710,9 +856,9 @@ export const api = {
     return await safeJson(res);
   },
 
-  // ============================================================
+  // ==========================================================
   // FAIR MATCHING
-  // ============================================================
+  // ==========================================================
 
   async getFairMatches(intent) {
     try {
@@ -720,9 +866,11 @@ export const api = {
         `${API_BASE_URL}/service-requests/matches`,
         {
           method: "POST",
+
           headers: {
             "Content-Type": "application/json",
           },
+
           body: JSON.stringify(intent),
         },
         12000,
@@ -775,17 +923,21 @@ export const api = {
     return getFairMatches(intent, WORKERS);
   },
 
-  // ============================================================
+  // ==========================================================
   // CREATE SERVICE REQUEST
-  // ============================================================
+  // ==========================================================
 
   async createServiceRequest(requestData) {
     if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
       return {
         ...requestData,
+
         id: `demo-req-${Date.now()}`,
+
         urgency: normalizeUrgency(requestData.urgency),
+
         status: requestData.status || "CREATED",
+
         createdAt: new Date().toISOString(),
       };
     }
@@ -795,9 +947,12 @@ export const api = {
         `${API_BASE_URL}/service-requests`,
         {
           method: "POST",
+
           headers: getAuthHeaders(),
+
           body: JSON.stringify({
             ...requestData,
+
             urgency: normalizeUrgency(requestData.urgency),
           }),
         },
@@ -816,6 +971,7 @@ export const api = {
 
       return {
         ...data,
+
         id: data.id || data._id,
       };
     } catch (err) {
@@ -829,16 +985,19 @@ export const api = {
     }
   },
 
-  // ============================================================
+  // ==========================================================
   // REQUEST STATUS
-  // ============================================================
+  // ==========================================================
 
   async updateRequestStatus(id, targetStatus, currentStatus, extra = {}) {
     if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
       return {
         id,
+
         status: targetStatus,
+
         currentStatus,
+
         ...extra,
       };
     }
@@ -848,10 +1007,14 @@ export const api = {
         `${API_BASE_URL}/service-requests/${id}/status`,
         {
           method: "PATCH",
+
           headers: getAuthHeaders(),
+
           body: JSON.stringify({
             status: targetStatus,
+
             currentStatus,
+
             ...extra,
           }),
         },
@@ -862,6 +1025,7 @@ export const api = {
 
       if (res.ok) {
         isLiveBackendAvailable = true;
+
         return data;
       }
 
@@ -879,9 +1043,9 @@ export const api = {
     }
   },
 
-  // ============================================================
+  // ==========================================================
   // COOPERATIVE ANALYTICS
-  // ============================================================
+  // ==========================================================
 
   async getCooperativePulse() {
     if (localStorage.getItem("coop_os_token") === "demo-mode-token") {
@@ -911,9 +1075,9 @@ export const api = {
     return COOPERATIVE_PULSE_METRICS;
   },
 
-  // ============================================================
+  // ==========================================================
   // ASSESSMENTS
-  // ============================================================
+  // ==========================================================
 
   async getAssessmentConfig(category) {
     try {
@@ -937,7 +1101,9 @@ export const api = {
         `${API_BASE_URL}/assessments/submit`,
         {
           method: "POST",
+
           headers: getAuthHeaders(),
+
           body: JSON.stringify(payload),
         },
         12000,
@@ -979,7 +1145,9 @@ export const api = {
         `${API_BASE_URL}/assessments/${id}/verify`,
         {
           method: "PATCH",
+
           headers: getAuthHeaders(),
+
           body: JSON.stringify(payload),
         },
         10000,
