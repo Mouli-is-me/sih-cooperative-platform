@@ -17,13 +17,11 @@ import {
 const router = express.Router();
 
 // =====================================================
-// ESP32 DEVICE
+// ESP32
 // =====================================================
 
-// ESP32 polls this endpoint for commands
 router.get("/device/:deviceCode/state", authenticateDevice, getDeviceState);
 
-// ESP32 reports its current state
 router.post(
   "/device/:deviceCode/heartbeat",
   authenticateDevice,
@@ -34,7 +32,6 @@ router.post(
 // WEBSITE / ADMIN
 // =====================================================
 
-// Get device information for admin dashboard
 router.get(
   "/dashboard/:deviceCode",
   authenticateToken,
@@ -42,7 +39,6 @@ router.get(
   getDeviceForDashboard,
 );
 
-// Send command to ESP32 from the website
 router.patch(
   "/dashboard/:deviceCode/command",
   authenticateToken,
@@ -51,45 +47,50 @@ router.patch(
 );
 
 // =====================================================
-// TEMPORARY SIH HARDWARE TEST
+// SIH DEMO MODE
 // =====================================================
-// WARNING:
-// This endpoint has NO authentication.
-// Use only for testing the ESP32 during development.
-// Remove it before final deployment.
+// Temporary demo endpoints.
+// These are intentionally separate from the secured
+// admin endpoints so Demo Mode can showcase the physical
+// ESP32 without requiring a real admin JWT.
+//
+// REMOVE THESE BEFORE PRODUCTION.
+// =====================================================
 
-router.patch("/test/:deviceCode/command", async (req, res) => {
+// -----------------------------------------------------
+// Demo: get physical device status
+// -----------------------------------------------------
+
+router.get("/test/:deviceCode/status", async (req, res) => {
   try {
     const { deviceCode } = req.params;
-    const { state, jobId = null } = req.body;
 
-    const validStates = ["AVAILABLE", "JOB_REQUESTED", "JOB_ACCEPTED"];
-
-    // Validate state
-    if (!validStates.includes(state)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: "INVALID_STATE",
-          message: "Invalid hardware state",
-        },
-      });
-    }
-
-    // Find and update device
     const { data, error } = await supabase
       .from("hardware_devices")
-      .update({
-        desired_state: state,
-        pending_job_id: jobId,
-        updated_at: new Date().toISOString(),
-      })
+      .select(
+        `
+          id,
+          device_code,
+          device_name,
+          worker_id,
+          desired_state,
+          reported_state,
+          pending_job_id,
+          is_online,
+          last_seen_at,
+          workers (
+            id,
+            name,
+            title,
+            category
+          )
+        `,
+      )
       .eq("device_code", deviceCode)
-      .select()
       .single();
 
     if (error) {
-      console.error("Hardware test command error:", error);
+      console.error("[DEMO HARDWARE STATUS]", error);
 
       return res.status(500).json({
         success: false,
@@ -110,21 +111,116 @@ router.patch("/test/:deviceCode/command", async (req, res) => {
       });
     }
 
-    console.log(`[HARDWARE TEST] ${deviceCode} -> ${state}`);
+    const isOnline =
+      data.last_seen_at &&
+      Date.now() - new Date(data.last_seen_at).getTime() < 15000;
 
     return res.json({
       success: true,
-      message: `Device ${deviceCode} command set to ${state}`,
-      data,
+
+      device: {
+        id: data.id,
+        deviceCode: data.device_code,
+        deviceName: data.device_name,
+
+        worker: data.workers,
+
+        desiredState: data.desired_state,
+
+        reportedState: data.reported_state,
+
+        pendingJobId: data.pending_job_id,
+
+        isOnline,
+
+        lastSeenAt: data.last_seen_at,
+      },
     });
   } catch (err) {
-    console.error("Hardware test command error:", err);
+    console.error("[DEMO HARDWARE STATUS]", err);
 
     return res.status(500).json({
       success: false,
       error: {
         code: "SERVER_ERROR",
-        message: "Unable to control test device",
+        message: "Unable to load hardware status",
+      },
+    });
+  }
+});
+
+// -----------------------------------------------------
+// Demo: send command to physical device
+// -----------------------------------------------------
+
+router.patch("/test/:deviceCode/command", async (req, res) => {
+  try {
+    const { deviceCode } = req.params;
+
+    const { state, jobId = null } = req.body;
+
+    const validStates = ["AVAILABLE", "JOB_REQUESTED", "JOB_ACCEPTED"];
+
+    if (!validStates.includes(state)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_STATE",
+          message: "Invalid hardware state",
+        },
+      });
+    }
+
+    const { data, error } = await supabase
+      .from("hardware_devices")
+      .update({
+        desired_state: state,
+        pending_job_id: jobId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("device_code", deviceCode)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("[DEMO HARDWARE COMMAND]", error);
+
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: "DATABASE_ERROR",
+          message: error.message,
+        },
+      });
+    }
+
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: "DEVICE_NOT_FOUND",
+          message: "Device not found",
+        },
+      });
+    }
+
+    console.log(`[DEMO HARDWARE] ${deviceCode} -> ${state}`);
+
+    return res.json({
+      success: true,
+
+      message: `Device ${deviceCode} command set to ${state}`,
+
+      data,
+    });
+  } catch (err) {
+    console.error("[DEMO HARDWARE COMMAND]", err);
+
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: "SERVER_ERROR",
+        message: "Unable to control hardware",
       },
     });
   }

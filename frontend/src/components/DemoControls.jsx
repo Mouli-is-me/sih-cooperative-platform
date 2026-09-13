@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+
 import {
   Info,
   Play,
@@ -14,8 +15,6 @@ import {
   Wifi,
   Send,
   RotateCcw,
-  Radio,
-  Smartphone,
 } from "lucide-react";
 
 import { api, isLiveBackendAvailable } from "../services/api.js";
@@ -34,9 +33,13 @@ export default function DemoControls({
   // =====================================================
 
   const [hardware, setHardware] = useState(null);
+
   const [hardwareLoading, setHardwareLoading] = useState(false);
+
   const [hardwareAction, setHardwareAction] = useState("");
+
   const [hardwareMessage, setHardwareMessage] = useState("");
+
   const [hardwareError, setHardwareError] = useState("");
 
   const DEVICE_CODE = "DEV-001";
@@ -50,22 +53,27 @@ export default function DemoControls({
       label: "Plumbing (EN): Kitchen tap leak",
       query: "My kitchen tap is leaking and I need someone today",
     },
+
     {
       label: "Plumbing (TA): குழாய் கசிகிறது",
       query: "என் சமையலறை குழாய் கசிகிறது",
     },
+
     {
       label: "Plumbing (HI): नल लीक हो रहा है",
       query: "मेरे रसोई घर का नल लीक हो रहा है आज कोई आ सकता है क्या",
     },
+
     {
       label: "Electrical (EN): Ceiling fan sparking",
       query: "Ceiling fan speed regulator is sparking and not working",
     },
+
     {
       label: "Carpentry (EN): Door hinge stuck",
       query: "Main entrance wooden door hinge broken and sticking",
     },
+
     {
       label: "Caregiving (EN): Senior assistance",
       query: "Need urgent elderly care support for elderly parent",
@@ -73,7 +81,7 @@ export default function DemoControls({
   ];
 
   // =====================================================
-  // LOAD HARDWARE
+  // LOAD HARDWARE STATUS
   // =====================================================
 
   const loadHardware = async () => {
@@ -81,23 +89,15 @@ export default function DemoControls({
       setHardwareLoading(true);
       setHardwareError("");
 
-      const response = await fetch(
-        "https://sih-cooperative-platform.onrender.com/api/hardware/device/DEV-001/state",
-        {
-          method: "GET",
-          headers: {
-            "X-Device-Code": "DEV-001",
-            "X-Device-Key": "SIH-DEV001-2026",
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      /*
+       * IMPORTANT:
+       * This uses the DEMO backend endpoint.
+       *
+       * Do NOT use api.getHardwareDevice() here because
+       * that endpoint is protected by admin JWT auth.
+       */
 
-      if (!response.ok) {
-        throw new Error(`Hardware status failed: ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = await api.getDemoHardwareDevice(DEVICE_CODE);
 
       if (result?.device) {
         setHardware(result.device);
@@ -105,7 +105,7 @@ export default function DemoControls({
     } catch (error) {
       console.error("[Demo Hardware]", error);
 
-      setHardwareError(error.message || "Hardware status unavailable");
+      setHardwareError(error?.message || "Hardware status unavailable");
     } finally {
       setHardwareLoading(false);
     }
@@ -116,13 +116,21 @@ export default function DemoControls({
   // =====================================================
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
 
+    // Initial load
     loadHardware();
 
-    const interval = setInterval(loadHardware, 3000);
+    // Refresh every 3 seconds
+    const interval = setInterval(() => {
+      loadHardware();
+    }, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [isOpen]);
 
   // =====================================================
@@ -132,35 +140,49 @@ export default function DemoControls({
   const sendHardwareCommand = async (state) => {
     try {
       setHardwareAction(state);
+
       setHardwareMessage("");
+
       setHardwareError("");
 
-      await api.setHardwareCommand(DEVICE_CODE, state, null);
+      /*
+       * IMPORTANT:
+       * Use DEMO command endpoint.
+       *
+       * Do NOT use api.setHardwareCommand()
+       * because that endpoint requires a JWT.
+       */
+
+      await api.setDemoHardwareCommand(DEVICE_CODE, state, null);
 
       const labels = {
         JOB_REQUESTED: "Job request sent to Kumar's physical device.",
+
         JOB_ACCEPTED: "Device marked as accepted.",
+
         AVAILABLE: "Device returned to available state.",
       };
 
-      setHardwareMessage(labels[state]);
+      setHardwareMessage(labels[state] || `Device state changed to ${state}.`);
 
+      // Immediately refresh status
       await loadHardware();
 
+      // Remove success message after 4 seconds
       setTimeout(() => {
         setHardwareMessage("");
       }, 4000);
     } catch (error) {
       console.error("[Demo Hardware Command]", error);
 
-      setHardwareError(error.message || "Unable to control hardware");
+      setHardwareError(error?.message || "Unable to control hardware");
     } finally {
       setHardwareAction("");
     }
   };
 
   // =====================================================
-  // HARDWARE STATUS HELPERS
+  // HARDWARE STATUS
   // =====================================================
 
   const hardwareOnline = hardware?.isOnline === true;
@@ -174,6 +196,27 @@ export default function DemoControls({
     JOB_REQUESTED: "JOB REQUESTED",
     JOB_ACCEPTED: "JOB ACCEPTED",
     OFFLINE: "OFFLINE",
+    UNKNOWN: "UNKNOWN",
+  };
+
+  // =====================================================
+  // STATE COLOR
+  // =====================================================
+
+  const getStateColor = (state) => {
+    if (state === "JOB_REQUESTED") {
+      return "#B91C1C";
+    }
+
+    if (state === "JOB_ACCEPTED") {
+      return "#166534";
+    }
+
+    if (state === "AVAILABLE") {
+      return "#334155";
+    }
+
+    return "#64748B";
   };
 
   // =====================================================
@@ -183,7 +226,7 @@ export default function DemoControls({
   return (
     <div className="demo-controls-toolbar">
       {/* =================================================
-          TOOLBAR HEADER
+          HEADER
       ================================================= */}
 
       <div className="toolbar-bar-header">
@@ -207,7 +250,10 @@ export default function DemoControls({
         </div>
 
         <div className="tb-right-group">
-          <button className="tb-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
+          <button
+            className="tb-toggle-btn"
+            onClick={() => setIsOpen((previous) => !previous)}
+          >
             <SlidersHorizontal size={13} />
 
             <span>Demo Mode</span>
@@ -218,7 +264,7 @@ export default function DemoControls({
       </div>
 
       {/* =================================================
-          TOOLBAR BODY
+          DEMO BODY
       ================================================= */}
 
       {isOpen && (
@@ -230,9 +276,9 @@ export default function DemoControls({
           <div className="preset-buttons">
             <span className="preset-label">Test Scenario Presets:</span>
 
-            {presets.map((preset, idx) => (
+            {presets.map((preset, index) => (
               <button
-                key={idx}
+                key={index}
                 className="preset-chip"
                 onClick={() => onSelectPreset(preset.query)}
               >
@@ -288,7 +334,7 @@ export default function DemoControls({
           </div>
 
           {/* =================================================
-              PHYSICAL HARDWARE DEMO
+              PHYSICAL WORKER DEVICE
           ================================================= */}
 
           <div
@@ -300,7 +346,9 @@ export default function DemoControls({
               background: "linear-gradient(135deg, #F8FAFC, #EEF2FF)",
             }}
           >
-            {/* HEADER */}
+            {/* =================================================
+                DEVICE HEADER
+            ================================================= */}
 
             <div
               style={{
@@ -349,7 +397,9 @@ export default function DemoControls({
                 </div>
               </div>
 
-              {/* ONLINE BADGE */}
+              {/* =================================================
+                  ONLINE STATUS
+              ================================================= */}
 
               <div
                 style={{
@@ -367,11 +417,17 @@ export default function DemoControls({
               >
                 <Wifi size={12} />
 
-                {hardwareOnline ? "ONLINE" : "OFFLINE"}
+                {hardwareLoading && !hardware
+                  ? "CHECKING..."
+                  : hardwareOnline
+                    ? "ONLINE"
+                    : "OFFLINE"}
               </div>
             </div>
 
-            {/* LIVE FLOW */}
+            {/* =================================================
+                LIVE STATUS
+            ================================================= */}
 
             <div
               style={{
@@ -381,11 +437,13 @@ export default function DemoControls({
                 marginBottom: "14px",
               }}
             >
+              {/* SERVER */}
+
               <div
                 style={{
                   padding: "11px",
                   borderRadius: "10px",
-                  background: "#fff",
+                  background: "#FFFFFF",
                   border: "1px solid #E2E8F0",
                 }}
               >
@@ -404,23 +462,20 @@ export default function DemoControls({
                     marginTop: "4px",
                     fontSize: "13px",
                     fontWeight: 900,
-                    color:
-                      desiredState === "JOB_REQUESTED"
-                        ? "#B91C1C"
-                        : desiredState === "JOB_ACCEPTED"
-                          ? "#166534"
-                          : "#334155",
+                    color: getStateColor(desiredState),
                   }}
                 >
                   {stateLabel[desiredState] || desiredState}
                 </div>
               </div>
 
+              {/* DEVICE */}
+
               <div
                 style={{
                   padding: "11px",
                   borderRadius: "10px",
-                  background: "#fff",
+                  background: "#FFFFFF",
                   border: "1px solid #E2E8F0",
                 }}
               >
@@ -439,12 +494,7 @@ export default function DemoControls({
                     marginTop: "4px",
                     fontSize: "13px",
                     fontWeight: 900,
-                    color:
-                      reportedState === "JOB_REQUESTED"
-                        ? "#B91C1C"
-                        : reportedState === "JOB_ACCEPTED"
-                          ? "#166534"
-                          : "#334155",
+                    color: getStateColor(reportedState),
                   }}
                 >
                   {stateLabel[reportedState] || reportedState}
@@ -452,7 +502,9 @@ export default function DemoControls({
               </div>
             </div>
 
-            {/* DEMO INSTRUCTION */}
+            {/* =================================================
+                LIVE DEMO INSTRUCTION
+            ================================================= */}
 
             <div
               style={{
@@ -468,12 +520,20 @@ export default function DemoControls({
             >
               <strong>Live hardware demonstration:</strong>
               <br />
-              Send a job → ESP32 shows the request → press{" "}
-              <strong>B1 + B2</strong>
-              on the physical device → worker acceptance is reported back.
+              Click <strong>Send Job</strong>
+              {" → "}
+              ESP32 receives the request
+              {" → "}
+              red LED + buzzer activate
+              {" → "}
+              press <strong>B1 + B2</strong>
+              {" → "}
+              device reports acceptance.
             </div>
 
-            {/* COMMAND BUTTONS */}
+            {/* =================================================
+                COMMAND BUTTONS
+            ================================================= */}
 
             <div
               style={{
@@ -482,7 +542,9 @@ export default function DemoControls({
                 gap: "8px",
               }}
             >
-              {/* JOB REQUEST */}
+              {/* -------------------------------------------------
+                  SEND JOB
+              ------------------------------------------------- */}
 
               <button
                 onClick={() => sendHardwareCommand("JOB_REQUESTED")}
@@ -492,10 +554,10 @@ export default function DemoControls({
                   borderRadius: "10px",
                   padding: "11px 8px",
                   background: "#DC2626",
-                  color: "#fff",
+                  color: "#FFFFFF",
                   fontWeight: 800,
                   fontSize: "11px",
-                  cursor: "pointer",
+                  cursor: hardwareAction ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -508,7 +570,9 @@ export default function DemoControls({
                 {hardwareAction === "JOB_REQUESTED" ? "Sending..." : "Send Job"}
               </button>
 
-              {/* ACCEPT */}
+              {/* -------------------------------------------------
+                  SERVER ACCEPT
+              ------------------------------------------------- */}
 
               <button
                 onClick={() => sendHardwareCommand("JOB_ACCEPTED")}
@@ -521,7 +585,7 @@ export default function DemoControls({
                   color: "#166534",
                   fontWeight: 800,
                   fontSize: "11px",
-                  cursor: "pointer",
+                  cursor: hardwareAction ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -533,7 +597,9 @@ export default function DemoControls({
                 Server Accept
               </button>
 
-              {/* CLEAR */}
+              {/* -------------------------------------------------
+                  RESET
+              ------------------------------------------------- */}
 
               <button
                 onClick={() => sendHardwareCommand("AVAILABLE")}
@@ -542,11 +608,11 @@ export default function DemoControls({
                   border: "1px solid #CBD5E1",
                   borderRadius: "10px",
                   padding: "11px 8px",
-                  background: "#fff",
+                  background: "#FFFFFF",
                   color: "#334155",
                   fontWeight: 800,
                   fontSize: "11px",
-                  cursor: "pointer",
+                  cursor: hardwareAction ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -559,7 +625,9 @@ export default function DemoControls({
               </button>
             </div>
 
-            {/* SUCCESS */}
+            {/* =================================================
+                SUCCESS MESSAGE
+            ================================================= */}
 
             {hardwareMessage && (
               <div
@@ -577,7 +645,9 @@ export default function DemoControls({
               </div>
             )}
 
-            {/* ERROR */}
+            {/* =================================================
+                ERROR MESSAGE
+            ================================================= */}
 
             {hardwareError && (
               <div
@@ -595,7 +665,29 @@ export default function DemoControls({
               </div>
             )}
 
-            {/* DEMO FLOW */}
+            {/* =================================================
+                LIVE DATA
+            ================================================= */}
+
+            {hardware && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  fontSize: "10px",
+                  color: "#64748B",
+                  textAlign: "center",
+                }}
+              >
+                Last device update:{" "}
+                {hardware.lastSeenAt
+                  ? new Date(hardware.lastSeenAt).toLocaleTimeString()
+                  : "Not available"}
+              </div>
+            )}
+
+            {/* =================================================
+                DEMO FLOW
+            ================================================= */}
 
             <div
               style={{
