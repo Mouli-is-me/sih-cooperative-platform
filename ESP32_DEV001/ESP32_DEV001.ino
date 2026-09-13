@@ -16,12 +16,6 @@ const char* WIFI_PASSWORD = "password illa";
 // BACKEND
 // =====================================================
 
-// IMPORTANT:
-// Replace this with YOUR ACTUAL Render backend URL.
-//
-// Example:
-// https://coop-os-api-xxxx.onrender.com/api
-//
 const char* API_BASE =
   "https://sih-cooperative-platform.onrender.com/api";
 
@@ -86,15 +80,18 @@ DeviceState deviceState = AVAILABLE;
 // BUTTON STATES
 // =====================================================
 
-bool previousButtonState = HIGH;
-bool nextButtonState = HIGH;
+bool prevRawState = HIGH;
+bool nextRawState = HIGH;
 
-bool bothButtonsActive = false;
+bool prevStableState = HIGH;
+bool nextStableState = HIGH;
 
-unsigned long bothPressedTime = 0;
-unsigned long lastButtonTime = 0;
+unsigned long prevLastChange = 0;
+unsigned long nextLastChange = 0;
 
-const unsigned long DEBOUNCE_TIME = 200;
+bool bothHandled = false;
+
+const unsigned long DEBOUNCE_TIME = 50;
 
 // =====================================================
 // BACKEND POLLING
@@ -145,7 +142,9 @@ void setup() {
 
     Serial.println("OLED NOT FOUND!");
 
-    while (true);
+    while (true) {
+      delay(100);
+    }
   }
 
   display.clearDisplay();
@@ -172,6 +171,13 @@ void setup() {
 
   delay(1000);
 
+  // Initialize button states after startup
+  prevRawState = digitalRead(BUTTON_PREV_PIN);
+  nextRawState = digitalRead(BUTTON_NEXT_PIN);
+
+  prevStableState = prevRawState;
+  nextStableState = nextRawState;
+
   showPage(currentPage);
 }
 
@@ -181,6 +187,7 @@ void setup() {
 
 void loop() {
 
+  // Handle physical buttons continuously
   handleButtons();
 
   // Poll backend every 3 seconds
@@ -493,7 +500,6 @@ String extractJobId(
     response.indexOf(key);
 
   if (start < 0) {
-
     return "";
   }
 
@@ -506,7 +512,6 @@ String extractJobId(
     );
 
   if (end < 0) {
-
     return "";
   }
 
@@ -519,160 +524,218 @@ String extractJobId(
 // =====================================================
 // BUTTON HANDLING
 // =====================================================
+// Button 1 = PREVIOUS
+// Button 2 = NEXT
+// Both = ACCEPT JOB
+// =====================================================
 
 void handleButtons() {
 
-  bool previousState =
-    digitalRead(
-      BUTTON_PREV_PIN
-    );
+  unsigned long now = millis();
 
-  bool nextState =
-    digitalRead(
-      BUTTON_NEXT_PIN
-    );
+  // ---------------------------------------------------
+  // Read raw buttons
+  // ---------------------------------------------------
 
-  // ===================================================
-  // BOTH BUTTONS
-  // ===================================================
+  bool prevRaw =
+    digitalRead(BUTTON_PREV_PIN);
+
+  bool nextRaw =
+    digitalRead(BUTTON_NEXT_PIN);
+
+  // ---------------------------------------------------
+  // Detect raw changes
+  // ---------------------------------------------------
+
+  if (prevRaw != prevRawState) {
+
+    prevRawState = prevRaw;
+
+    prevLastChange = now;
+  }
+
+  if (nextRaw != nextRawState) {
+
+    nextRawState = nextRaw;
+
+    nextLastChange = now;
+  }
+
+  // ---------------------------------------------------
+  // Confirm stable PREVIOUS state
+  // ---------------------------------------------------
 
   if (
-    previousState == LOW &&
-    nextState == LOW
+    (now - prevLastChange >= DEBOUNCE_TIME) &&
+    prevStableState != prevRawState
   ) {
 
-    if (!bothButtonsActive) {
+    prevStableState =
+      prevRawState;
+  }
 
-      bothButtonsActive = true;
+  // ---------------------------------------------------
+  // Confirm stable NEXT state
+  // ---------------------------------------------------
 
-      bothPressedTime =
-        millis();
+  if (
+    (now - nextLastChange >= DEBOUNCE_TIME) &&
+    nextStableState != nextRawState
+  ) {
+
+    nextStableState =
+      nextRawState;
+  }
+
+  // ---------------------------------------------------
+  // BOTH BUTTONS PRESSED
+  // ---------------------------------------------------
+
+  if (
+    prevStableState == LOW &&
+    nextStableState == LOW
+  ) {
+
+    if (!bothHandled) {
+
+      bothHandled = true;
+
+      Serial.println(
+        "BOTH BUTTONS PRESSED"
+      );
+
+      // Only accept if there is a job
+      if (
+        deviceState ==
+        JOB_REQUESTED
+      ) {
+
+        Serial.println(
+          "ACCEPTING JOB"
+        );
+
+        acceptJob();
+
+      } else {
+
+        showConfirmation();
+      }
     }
 
     return;
   }
 
-  // ===================================================
-  // BOTH RELEASED
-  // ===================================================
+  // ---------------------------------------------------
+  // BOTH BUTTONS RELEASED
+  // ---------------------------------------------------
 
   if (
-    previousState == HIGH &&
-    nextState == HIGH
+    prevStableState == HIGH &&
+    nextStableState == HIGH
   ) {
 
-    if (bothButtonsActive) {
-
-      unsigned long pressTime =
-        millis() -
-        bothPressedTime;
-
-      // Short simultaneous press
-      if (
-        pressTime < 2000
-      ) {
-
-        if (
-          deviceState ==
-          JOB_REQUESTED
-        ) {
-
-          acceptJob();
-
-        } else {
-
-          showConfirmation();
-        }
-      }
-
-      bothButtonsActive =
-        false;
-    }
-
-    previousButtonState =
-      previousState;
-
-    nextButtonState =
-      nextState;
+    bothHandled = false;
 
     return;
   }
 
-  // ===================================================
-  // BUTTON 1
-  // ===================================================
+  // ---------------------------------------------------
+  // PREVIOUS BUTTON
+  // ---------------------------------------------------
 
   if (
-    previousState == LOW &&
-    previousButtonState == HIGH &&
-    nextState == HIGH
+    prevStableState == LOW &&
+    nextStableState == HIGH &&
+    !bothHandled
   ) {
 
-    if (
-      millis() -
-      lastButtonTime >
-      DEBOUNCE_TIME
+    currentPage--;
+
+    if (currentPage < 0) {
+
+      currentPage =
+        TOTAL_PAGES - 1;
+    }
+
+    Serial.print(
+      "PAGE: "
+    );
+
+    Serial.println(
+      currentPage + 1
+    );
+
+    showPage(
+      currentPage
+    );
+
+    // Wait for physical release
+    while (
+      digitalRead(
+        BUTTON_PREV_PIN
+      ) == LOW
     ) {
 
-      lastButtonTime =
-        millis();
-
-      currentPage--;
-
-      if (
-        currentPage < 0
-      ) {
-
-        currentPage =
-          TOTAL_PAGES - 1;
-      }
-
-      showPage(
-        currentPage
-      );
+      delay(5);
     }
+
+    // Reset debounce state
+    prevRawState = HIGH;
+    prevStableState = HIGH;
+    prevLastChange = millis();
+
+    return;
   }
 
-  // ===================================================
-  // BUTTON 2
-  // ===================================================
+  // ---------------------------------------------------
+  // NEXT BUTTON
+  // ---------------------------------------------------
 
   if (
-    nextState == LOW &&
-    nextButtonState == HIGH &&
-    previousState == HIGH
+    nextStableState == LOW &&
+    prevStableState == HIGH &&
+    !bothHandled
   ) {
 
+    currentPage++;
+
     if (
-      millis() -
-      lastButtonTime >
-      DEBOUNCE_TIME
+      currentPage >=
+      TOTAL_PAGES
     ) {
 
-      lastButtonTime =
-        millis();
-
-      currentPage++;
-
-      if (
-        currentPage >=
-        TOTAL_PAGES
-      ) {
-
-        currentPage = 0;
-      }
-
-      showPage(
-        currentPage
-      );
+      currentPage = 0;
     }
+
+    Serial.print(
+      "PAGE: "
+    );
+
+    Serial.println(
+      currentPage + 1
+    );
+
+    showPage(
+      currentPage
+    );
+
+    // Wait for physical release
+    while (
+      digitalRead(
+        BUTTON_NEXT_PIN
+      ) == LOW
+    ) {
+
+      delay(5);
+    }
+
+    // Reset debounce state
+    nextRawState = HIGH;
+    nextStableState = HIGH;
+    nextLastChange = millis();
+
+    return;
   }
-
-  previousButtonState =
-    previousState;
-
-  nextButtonState =
-    nextState;
 }
 
 // =====================================================
@@ -936,7 +999,7 @@ void showPage(
   display.clearDisplay();
 
   // ===================================================
-  // PAGE 1
+  // PAGE 1 - WORKER PROFILE
   // ===================================================
 
   if (page == 0) {
@@ -993,7 +1056,7 @@ void showPage(
   }
 
   // ===================================================
-  // PAGE 2
+  // PAGE 2 - DEVICE STATUS
   // ===================================================
 
   else if (page == 1) {
@@ -1053,7 +1116,7 @@ void showPage(
   }
 
   // ===================================================
-  // PAGE 3
+  // PAGE 3 - SAFETY STATUS
   // ===================================================
 
   else if (page == 2) {
@@ -1147,7 +1210,7 @@ void showPage(
   }
 
   // ===================================================
-  // PAGE 4
+  // PAGE 4 - WORK STATUS
   // ===================================================
 
   else if (page == 3) {
@@ -1241,7 +1304,7 @@ void showPage(
   }
 
   // ===================================================
-  // PAGE 5
+  // PAGE 5 - DEVICE INFO
   // ===================================================
 
   else if (page == 4) {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Info,
   Play,
@@ -10,8 +10,15 @@ import {
   ChevronDown,
   ChevronUp,
   Server,
+  Cpu,
+  Wifi,
+  Send,
+  RotateCcw,
+  Radio,
+  Smartphone,
 } from "lucide-react";
-import { isLiveBackendAvailable } from "../services/api.js";
+
+import { api, isLiveBackendAvailable } from "../services/api.js";
 
 export default function DemoControls({
   activeView,
@@ -21,6 +28,22 @@ export default function DemoControls({
   onChangeLang,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // =====================================================
+  // HARDWARE DEMO STATE
+  // =====================================================
+
+  const [hardware, setHardware] = useState(null);
+  const [hardwareLoading, setHardwareLoading] = useState(false);
+  const [hardwareAction, setHardwareAction] = useState("");
+  const [hardwareMessage, setHardwareMessage] = useState("");
+  const [hardwareError, setHardwareError] = useState("");
+
+  const DEVICE_CODE = "DEV-001";
+
+  // =====================================================
+  // DEMO PRESETS
+  // =====================================================
 
   const presets = [
     {
@@ -49,18 +72,118 @@ export default function DemoControls({
     },
   ];
 
+  // =====================================================
+  // LOAD HARDWARE
+  // =====================================================
+
+  const loadHardware = async () => {
+    try {
+      setHardwareLoading(true);
+      setHardwareError("");
+
+      const result = await api.getHardwareDevice(DEVICE_CODE);
+
+      if (result?.device) {
+        setHardware(result.device);
+      }
+    } catch (error) {
+      console.error("[Demo Hardware]", error);
+
+      setHardwareError(error.message || "Hardware status unavailable");
+    } finally {
+      setHardwareLoading(false);
+    }
+  };
+
+  // =====================================================
+  // POLL HARDWARE STATUS
+  // =====================================================
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    loadHardware();
+
+    const interval = setInterval(loadHardware, 3000);
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
+  // =====================================================
+  // SEND HARDWARE COMMAND
+  // =====================================================
+
+  const sendHardwareCommand = async (state) => {
+    try {
+      setHardwareAction(state);
+      setHardwareMessage("");
+      setHardwareError("");
+
+      await api.setHardwareCommand(DEVICE_CODE, state, null);
+
+      const labels = {
+        JOB_REQUESTED: "Job request sent to Kumar's physical device.",
+        JOB_ACCEPTED: "Device marked as accepted.",
+        AVAILABLE: "Device returned to available state.",
+      };
+
+      setHardwareMessage(labels[state]);
+
+      await loadHardware();
+
+      setTimeout(() => {
+        setHardwareMessage("");
+      }, 4000);
+    } catch (error) {
+      console.error("[Demo Hardware Command]", error);
+
+      setHardwareError(error.message || "Unable to control hardware");
+    } finally {
+      setHardwareAction("");
+    }
+  };
+
+  // =====================================================
+  // HARDWARE STATUS HELPERS
+  // =====================================================
+
+  const hardwareOnline = hardware?.isOnline === true;
+
+  const desiredState = hardware?.desiredState || "UNKNOWN";
+
+  const reportedState = hardware?.reportedState || "UNKNOWN";
+
+  const stateLabel = {
+    AVAILABLE: "AVAILABLE",
+    JOB_REQUESTED: "JOB REQUESTED",
+    JOB_ACCEPTED: "JOB ACCEPTED",
+    OFFLINE: "OFFLINE",
+  };
+
+  // =====================================================
+  // RENDER
+  // =====================================================
+
   return (
     <div className="demo-controls-toolbar">
+      {/* =================================================
+          TOOLBAR HEADER
+      ================================================= */}
+
       <div className="toolbar-bar-header">
         <div className="tb-badge-group">
           <span className="tb-demo-pill">
-            <Info size={12} /> SIH DEMO CONTROLS
+            <Info size={12} />
+            SIH DEMO CONTROLS
           </span>
 
           <span
-            className={`tb-mode-chip ${isLiveBackendAvailable ? "chip-live" : "chip-demo"}`}
+            className={`tb-mode-chip ${
+              isLiveBackendAvailable ? "chip-live" : "chip-demo"
+            }`}
           >
             <Server size={11} />
+
             {isLiveBackendAvailable
               ? "LIVE API MODE (Node.js)"
               : "DEMO MODE (Local State)"}
@@ -70,17 +193,27 @@ export default function DemoControls({
         <div className="tb-right-group">
           <button className="tb-toggle-btn" onClick={() => setIsOpen(!isOpen)}>
             <SlidersHorizontal size={13} />
+
             <span>Demo Mode</span>
+
             {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         </div>
       </div>
 
+      {/* =================================================
+          TOOLBAR BODY
+      ================================================= */}
+
       {isOpen && (
         <div className="toolbar-body-content">
-          {/* Quick Preset Buttons */}
+          {/* =================================================
+              QUICK PRESETS
+          ================================================= */}
+
           <div className="preset-buttons">
             <span className="preset-label">Test Scenario Presets:</span>
+
             {presets.map((preset, idx) => (
               <button
                 key={idx}
@@ -88,37 +221,397 @@ export default function DemoControls({
                 onClick={() => onSelectPreset(preset.query)}
               >
                 <Play size={10} className="play-icon" />
+
                 {preset.label}
               </button>
             ))}
           </div>
 
-          {/* Role Direct Jump Switcher */}
+          {/* =================================================
+              ROLE SWITCHER
+          ================================================= */}
+
           <div className="role-switcher">
             <button
-              className={`role-btn ${activeView === "/" || activeView === "/find" ? "active" : ""}`}
+              className={`role-btn ${
+                activeView === "/" || activeView === "/find" ? "active" : ""
+              }`}
               onClick={() => onNavigate("/")}
             >
-              <User size={13} /> Customer Intent
+              <User size={13} />
+              Customer Intent
             </button>
+
             <button
-              className={`role-btn ${activeView === "/customer" ? "active" : ""}`}
+              className={`role-btn ${
+                activeView === "/customer" ? "active" : ""
+              }`}
               onClick={() => onNavigate("/customer")}
             >
-              <CheckCircle2 size={13} /> Customer Portal
+              <CheckCircle2 size={13} />
+              Customer Portal
             </button>
+
             <button
               className={`role-btn ${activeView === "/worker" ? "active" : ""}`}
               onClick={() => onNavigate("/worker")}
             >
-              <UserCheck size={13} /> Worker Portal
+              <UserCheck size={13} />
+              Worker Portal
             </button>
+
             <button
-              className={`role-btn ${activeView === "/cooperative" ? "active" : ""}`}
+              className={`role-btn ${
+                activeView === "/cooperative" ? "active" : ""
+              }`}
               onClick={() => onNavigate("/cooperative")}
             >
-              <Building size={13} /> Coop Federation
+              <Building size={13} />
+              Coop Federation
             </button>
+          </div>
+
+          {/* =================================================
+              PHYSICAL HARDWARE DEMO
+          ================================================= */}
+
+          <div
+            style={{
+              marginTop: "18px",
+              padding: "18px",
+              borderRadius: "16px",
+              border: "1px solid #CBD5E1",
+              background: "linear-gradient(135deg, #F8FAFC, #EEF2FF)",
+            }}
+          >
+            {/* HEADER */}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: "12px",
+                marginBottom: "15px",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    fontSize: "11px",
+                    fontWeight: 900,
+                    letterSpacing: "0.08em",
+                    color: "#475569",
+                  }}
+                >
+                  <Cpu size={14} />
+                  PHYSICAL WORKER DEVICE
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 900,
+                    marginTop: "5px",
+                    color: "#0F172A",
+                  }}
+                >
+                  Live ESP32 Demo
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#64748B",
+                    marginTop: "3px",
+                  }}
+                >
+                  Kumar M. • DEV-001
+                </div>
+              </div>
+
+              {/* ONLINE BADGE */}
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "6px 10px",
+                  borderRadius: "999px",
+                  background: hardwareOnline ? "#DCFCE7" : "#FEE2E2",
+                  color: hardwareOnline ? "#166534" : "#991B1B",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <Wifi size={12} />
+
+                {hardwareOnline ? "ONLINE" : "OFFLINE"}
+              </div>
+            </div>
+
+            {/* LIVE FLOW */}
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "8px",
+                marginBottom: "14px",
+              }}
+            >
+              <div
+                style={{
+                  padding: "11px",
+                  borderRadius: "10px",
+                  background: "#fff",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#64748B",
+                    fontWeight: 800,
+                  }}
+                >
+                  SERVER COMMAND
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "4px",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    color:
+                      desiredState === "JOB_REQUESTED"
+                        ? "#B91C1C"
+                        : desiredState === "JOB_ACCEPTED"
+                          ? "#166534"
+                          : "#334155",
+                  }}
+                >
+                  {stateLabel[desiredState] || desiredState}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: "11px",
+                  borderRadius: "10px",
+                  background: "#fff",
+                  border: "1px solid #E2E8F0",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: "10px",
+                    color: "#64748B",
+                    fontWeight: 800,
+                  }}
+                >
+                  DEVICE REPORT
+                </div>
+
+                <div
+                  style={{
+                    marginTop: "4px",
+                    fontSize: "13px",
+                    fontWeight: 900,
+                    color:
+                      reportedState === "JOB_REQUESTED"
+                        ? "#B91C1C"
+                        : reportedState === "JOB_ACCEPTED"
+                          ? "#166534"
+                          : "#334155",
+                  }}
+                >
+                  {stateLabel[reportedState] || reportedState}
+                </div>
+              </div>
+            </div>
+
+            {/* DEMO INSTRUCTION */}
+
+            <div
+              style={{
+                padding: "11px 12px",
+                borderRadius: "10px",
+                background: "#EEF2FF",
+                border: "1px solid #C7D2FE",
+                marginBottom: "12px",
+                fontSize: "12px",
+                color: "#3730A3",
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>Live hardware demonstration:</strong>
+              <br />
+              Send a job → ESP32 shows the request → press{" "}
+              <strong>B1 + B2</strong>
+              on the physical device → worker acceptance is reported back.
+            </div>
+
+            {/* COMMAND BUTTONS */}
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "8px",
+              }}
+            >
+              {/* JOB REQUEST */}
+
+              <button
+                onClick={() => sendHardwareCommand("JOB_REQUESTED")}
+                disabled={!!hardwareAction}
+                style={{
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "11px 8px",
+                  background: "#DC2626",
+                  color: "#fff",
+                  fontWeight: 800,
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "5px",
+                  opacity: hardwareAction ? 0.6 : 1,
+                }}
+              >
+                <Send size={13} />
+
+                {hardwareAction === "JOB_REQUESTED" ? "Sending..." : "Send Job"}
+              </button>
+
+              {/* ACCEPT */}
+
+              <button
+                onClick={() => sendHardwareCommand("JOB_ACCEPTED")}
+                disabled={!!hardwareAction}
+                style={{
+                  border: "1px solid #86EFAC",
+                  borderRadius: "10px",
+                  padding: "11px 8px",
+                  background: "#F0FDF4",
+                  color: "#166534",
+                  fontWeight: 800,
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "5px",
+                  opacity: hardwareAction ? 0.6 : 1,
+                }}
+              >
+                <CheckCircle2 size={13} />
+                Server Accept
+              </button>
+
+              {/* CLEAR */}
+
+              <button
+                onClick={() => sendHardwareCommand("AVAILABLE")}
+                disabled={!!hardwareAction}
+                style={{
+                  border: "1px solid #CBD5E1",
+                  borderRadius: "10px",
+                  padding: "11px 8px",
+                  background: "#fff",
+                  color: "#334155",
+                  fontWeight: 800,
+                  fontSize: "11px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "5px",
+                  opacity: hardwareAction ? 0.6 : 1,
+                }}
+              >
+                <RotateCcw size={13} />
+                Reset
+              </button>
+            </div>
+
+            {/* SUCCESS */}
+
+            {hardwareMessage && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  padding: "9px 11px",
+                  borderRadius: "8px",
+                  background: "#DCFCE7",
+                  color: "#166534",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                }}
+              >
+                ✓ {hardwareMessage}
+              </div>
+            )}
+
+            {/* ERROR */}
+
+            {hardwareError && (
+              <div
+                style={{
+                  marginTop: "10px",
+                  padding: "9px 11px",
+                  borderRadius: "8px",
+                  background: "#FEE2E2",
+                  color: "#991B1B",
+                  fontSize: "11px",
+                  fontWeight: 800,
+                }}
+              >
+                {hardwareError}
+              </div>
+            )}
+
+            {/* DEMO FLOW */}
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                marginTop: "14px",
+                fontSize: "10px",
+                color: "#64748B",
+                fontWeight: 700,
+                flexWrap: "wrap",
+              }}
+            >
+              <span>WEBSITE</span>
+
+              <span>→</span>
+
+              <span>RENDER API</span>
+
+              <span>→</span>
+
+              <span>ESP32</span>
+
+              <span>→</span>
+
+              <span>B1+B2</span>
+
+              <span>→</span>
+
+              <span>ACCEPTED</span>
+            </div>
           </div>
         </div>
       )}
