@@ -11,7 +11,9 @@ export const seedDatabase = async () => {
   console.log("==================================================");
 
   if (!isSupabaseConfigured()) {
-    console.warn("[Seeding Notice] Supabase environment variables not configured. Skipping remote database seed.");
+    console.warn(
+      "[Seeding Notice] Supabase environment variables not configured. Skipping remote database seed.",
+    );
     return;
   }
 
@@ -37,7 +39,9 @@ export const seedDatabase = async () => {
       phone: "9876543211",
       password_hash: defaultPasswordHash,
       role: "cooperative_admin",
-      profile_info: { cooperativeName: "Madurai District Labour Co-op Federation" },
+      profile_info: {
+        cooperativeName: "Madurai District Labour Co-op Federation",
+      },
       status: "ACTIVE",
     },
     {
@@ -60,11 +64,28 @@ export const seedDatabase = async () => {
       profile_info: { city: "Madurai", area: "K.K. Nagar" },
       status: "ACTIVE",
     },
+    ...SEED_WORKERS.filter((worker) => worker.name !== "Kumar M.").map(
+      (worker, index) => ({
+        id: `usr-worker-${worker.coopId.toLowerCase()}`,
+        full_name: worker.name,
+        email: `${worker.coopId.toLowerCase()}@worker.coopos.org`,
+        phone: `987654${String(3214 + index).padStart(4, "0")}`,
+        password_hash: defaultPasswordHash,
+        role: "worker",
+        profile_info: {
+          trade: worker.category,
+          experienceYears: worker.experienceYears,
+        },
+        status: "ACTIVE",
+      }),
+    ),
   ];
 
   console.log("[Supabase Seeding] Seeding standard RBAC users...");
   for (const u of seedUsers) {
-    const { error } = await supabase.from("users").upsert([u], { onConflict: "id" });
+    const { error } = await supabase
+      .from("users")
+      .upsert([u], { onConflict: "id" });
     if (error) console.warn(`[Seed Warning] User ${u.email}:`, error.message);
     else console.log(`[Seed Success] Upserted user: ${u.email} (${u.role})`);
   }
@@ -75,7 +96,8 @@ export const seedDatabase = async () => {
       id: "coop-mdu-01",
       name: "Madurai District Labour Co-op Federation",
       registration_number: "MDU-LAB-8941",
-      description: "District-wide federation aggregating certified skilled trade workers across plumbing, electrical, and carpentry.",
+      description:
+        "District-wide federation aggregating certified skilled trade workers across plumbing, electrical, and carpentry.",
       location: "Madurai Central, Tamil Nadu",
       contact_info: { phone: "0452-2541098", email: "contact@maduraicoop.org" },
       status: "VERIFIED",
@@ -84,7 +106,8 @@ export const seedDatabase = async () => {
       id: "coop-mdu-02",
       name: "Madurai Central Worker Co-op Society",
       registration_number: "MDU-LAB-7102",
-      description: "Cooperative society for heavy maintenance and emergency utility response.",
+      description:
+        "Cooperative society for heavy maintenance and emergency utility response.",
       location: "Madurai South, Tamil Nadu",
       status: "VERIFIED",
     },
@@ -92,8 +115,11 @@ export const seedDatabase = async () => {
 
   console.log("[Supabase Seeding] Seeding cooperatives...");
   for (const c of seedCooperatives) {
-    const { error } = await supabase.from("cooperatives").upsert([c], { onConflict: "id" });
-    if (error) console.warn(`[Seed Warning] Cooperative ${c.name}:`, error.message);
+    const { error } = await supabase
+      .from("cooperatives")
+      .upsert([c], { onConflict: "id" });
+    if (error)
+      console.warn(`[Seed Warning] Cooperative ${c.name}:`, error.message);
     else console.log(`[Seed Success] Upserted cooperative: ${c.name}`);
   }
 
@@ -102,7 +128,10 @@ export const seedDatabase = async () => {
   for (const w of SEED_WORKERS) {
     const payload = {
       id: w.coopId.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-      user_id: w.name === "Kumar M." ? "usr-worker-01" : null,
+      user_id:
+        w.name === "Kumar M."
+          ? "usr-worker-01"
+          : `usr-worker-${w.coopId.toLowerCase()}`,
       name: w.name,
       title: w.title,
       category: w.category,
@@ -134,7 +163,9 @@ export const seedDatabase = async () => {
       bio: w.bio,
     };
 
-    const { error } = await supabase.from("workers").upsert([payload], { onConflict: "id" });
+    const { error } = await supabase
+      .from("workers")
+      .upsert([payload], { onConflict: "id" });
     if (error) console.warn(`[Seed Warning] Worker ${w.name}:`, error.message);
     else console.log(`[Seed Success] Upserted worker: ${w.name}`);
   }
@@ -146,11 +177,12 @@ export const seedDatabase = async () => {
       cooperative_id: "coop-mdu-01",
       created_by: "usr-coopadmin-01",
       title: "Commercial Plumbing Pipeline Maintenance",
-      description: "Full overhaul of commercial water supply manifold and pressure check in Anna Nagar complex.",
+      description:
+        "Full overhaul of commercial water supply manifold and pressure check in Anna Nagar complex.",
       category: "plumbing",
       required_skills: ["Leak diagnosis", "Pressure testing", "Pipe fitting"],
       location: "Anna Nagar, Madurai",
-      wage: 2500.00,
+      wage: 2500.0,
       status: "OPEN",
     },
     {
@@ -158,18 +190,25 @@ export const seedDatabase = async () => {
       cooperative_id: "coop-mdu-01",
       created_by: "usr-coopadmin-01",
       title: "Residential Electrical Distribution Box Upgrade",
-      description: "3-Phase DB box installation and MCB replacement for residential apartment block.",
+      description:
+        "3-Phase DB box installation and MCB replacement for residential apartment block.",
       category: "electrical",
-      required_skills: ["DB Box Wiring", "MCB Installation", "Safety Inspection"],
+      required_skills: [
+        "DB Box Wiring",
+        "MCB Installation",
+        "Safety Inspection",
+      ],
       location: "K.K. Nagar, Madurai",
-      wage: 1800.00,
+      wage: 1800.0,
       status: "OPEN",
     },
   ];
 
   console.log("[Supabase Seeding] Seeding open jobs...");
   for (const j of seedJobs) {
-    const { error } = await supabase.from("jobs").upsert([j], { onConflict: "id" });
+    const { error } = await supabase
+      .from("jobs")
+      .upsert([j], { onConflict: "id" });
     if (error) console.warn(`[Seed Warning] Job ${j.title}:`, error.message);
     else console.log(`[Seed Success] Upserted job: ${j.title}`);
   }
@@ -180,8 +219,10 @@ export const seedDatabase = async () => {
 };
 
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}`) {
-  seedDatabase().then(() => process.exit(0)).catch((err) => {
-    console.error("Seeding failed:", err);
-    process.exit(1);
-  });
+  seedDatabase()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("Seeding failed:", err);
+      process.exit(1);
+    });
 }

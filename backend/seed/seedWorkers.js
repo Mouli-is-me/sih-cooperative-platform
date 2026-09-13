@@ -7,7 +7,8 @@ export const SEED_WORKERS = [
     badge: "Verified Cooperative Worker",
     cooperative: "Madurai District Labour Co-op Federation",
     coopId: "MDU-LAB-8941",
-    avatar: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?auto=format&fit=crop&q=80&w=300",
+    avatar:
+      "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?auto=format&fit=crop&q=80&w=300",
     rating: 4.8,
     jobsCompleted: 147,
     onTimeRate: 94,
@@ -31,16 +32,31 @@ export const SEED_WORKERS = [
     practicalVerificationStatus: "VERIFIED",
     assessmentScore: 92,
     skills: [
-      { name: "Pipe repair", level: "Advanced", confidence: 96, evidence: "42 verified jobs completed" },
-      { name: "Tap installation", level: "Advanced", confidence: 94, evidence: "38 verified jobs completed" },
-      { name: "Bathroom fixtures", level: "Intermediate", confidence: 92, evidence: "25 verified jobs completed" }
+      {
+        name: "Pipe repair",
+        level: "Advanced",
+        confidence: 96,
+        evidence: "42 verified jobs completed",
+      },
+      {
+        name: "Tap installation",
+        level: "Advanced",
+        confidence: 94,
+        evidence: "38 verified jobs completed",
+      },
+      {
+        name: "Bathroom fixtures",
+        level: "Intermediate",
+        confidence: 92,
+        evidence: "25 verified jobs completed",
+      },
     ],
     verifications: [
       "Cooperative Membership Verified",
       "Government Identity Verified",
-      "Practically Verified Skill Assessment (92%)"
+      "Practically Verified Skill Assessment (92%)",
     ],
-    bio: "Certified plumber with 6+ years experience in domestic pipe installations, emergency leak fixes, and commercial sanitary systems."
+    bio: "Certified plumber with 6+ years experience in domestic pipe installations, emergency leak fixes, and commercial sanitary systems.",
   },
   {
     name: "Ravi Chandran",
@@ -49,13 +65,14 @@ export const SEED_WORKERS = [
     badge: "Master Cooperative Technician",
     cooperative: "Madurai Central Worker Co-op Society",
     coopId: "MDU-LAB-7102",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300",
+    avatar:
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300",
     rating: 4.9,
     jobsCompleted: 203,
     onTimeRate: 98,
     reliabilityScore: 97,
-    latitude: 9.9200,
-    longitude: 78.1250,
+    latitude: 9.92,
+    longitude: 78.125,
     workloadCapacity: 89,
     workloadStatus: "High",
     availability: "Busy (Finishing job in 45m)",
@@ -73,15 +90,25 @@ export const SEED_WORKERS = [
     practicalVerificationStatus: "VERIFIED",
     assessmentScore: 96,
     skills: [
-      { name: "Leak diagnosis", level: "Master", confidence: 99, evidence: "89 verified jobs completed" },
-      { name: "Drain clearing", level: "Master", confidence: 97, evidence: "65 verified jobs completed" }
+      {
+        name: "Leak diagnosis",
+        level: "Master",
+        confidence: 99,
+        evidence: "89 verified jobs completed",
+      },
+      {
+        name: "Drain clearing",
+        level: "Master",
+        confidence: 97,
+        evidence: "65 verified jobs completed",
+      },
     ],
     verifications: [
       "Cooperative Membership Verified",
       "Master Skill Trainer Certificate",
-      "Practically Verified Skill Assessment (96%)"
+      "Practically Verified Skill Assessment (96%)",
     ],
-    bio: "Veteran plumbing specialist serving residential complex projects and high-volume emergency repairs."
+    bio: "Veteran plumbing specialist serving residential complex projects and high-volume emergency repairs.",
   },
   {
     name: "Arjun K.",
@@ -90,13 +117,14 @@ export const SEED_WORKERS = [
     badge: "Verified Cooperative Worker",
     cooperative: "Madurai East Labour Cooperative",
     coopId: "MDU-LAB-6043",
-    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300",
+    avatar:
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300",
     rating: 4.7,
     jobsCompleted: 119,
     onTimeRate: 92,
     reliabilityScore: 91,
-    latitude: 9.9310,
-    longitude: 78.1300,
+    latitude: 9.931,
+    longitude: 78.13,
     workloadCapacity: 52,
     workloadStatus: "Medium",
     availability: "Available Today",
@@ -114,14 +142,24 @@ export const SEED_WORKERS = [
     practicalVerificationStatus: "VERIFIED",
     assessmentScore: 84,
     skills: [
-      { name: "Tap fitting", level: "Advanced", confidence: 92, evidence: "28 verified jobs" },
-      { name: "General plumbing", level: "Intermediate", confidence: 90, evidence: "45 verified jobs" }
+      {
+        name: "Tap fitting",
+        level: "Advanced",
+        confidence: 92,
+        evidence: "28 verified jobs",
+      },
+      {
+        name: "General plumbing",
+        level: "Intermediate",
+        confidence: 90,
+        evidence: "45 verified jobs",
+      },
     ],
     verifications: [
       "Cooperative Membership Verified",
-      "Practically Verified Skill Assessment (84%)"
+      "Practically Verified Skill Assessment (84%)",
     ],
-    bio: "Skilled cooperative member focusing on household maintenance, drainage clearing, and quick turnaround plumbing."
+    bio: "Skilled cooperative member focusing on household maintenance, drainage clearing, and quick turnaround plumbing.",
   },
   {
     name: "Selvi R.",
@@ -130,13 +168,14 @@ export const SEED_WORKERS = [
     badge: "Verified Cooperative Technician",
     cooperative: "Madurai District Labour Co-op Federation",
     coopId: "MDU-LAB-5512",
-    avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300",
+    avatar:
+      "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300",
     rating: 4.9,
     jobsCompleted: 182,
     onTimeRate: 96,
     reliabilityScore: 96,
-    latitude: 9.9210,
-    longitude: 78.1180,
+    latitude: 9.921,
+    longitude: 78.118,
     workloadCapacity: 28,
     workloadStatus: "Low",
     availability: "Available Now",
@@ -154,15 +193,25 @@ export const SEED_WORKERS = [
     practicalVerificationStatus: "VERIFIED",
     assessmentScore: 94,
     skills: [
-      { name: "Fan wiring & motor fix", level: "Advanced", confidence: 98, evidence: "55 verified jobs" },
-      { name: "Short circuit repair", level: "Advanced", confidence: 96, evidence: "42 verified jobs" }
+      {
+        name: "Fan wiring & motor fix",
+        level: "Advanced",
+        confidence: 98,
+        evidence: "55 verified jobs",
+      },
+      {
+        name: "Short circuit repair",
+        level: "Advanced",
+        confidence: 96,
+        evidence: "42 verified jobs",
+      },
     ],
     verifications: [
       "Cooperative Membership Verified",
       "Licensed Wireman Certificate (Tamil Nadu Board)",
-      "Practically Verified Skill Assessment (94%)"
+      "Practically Verified Skill Assessment (94%)",
     ],
-    bio: "Licensed wireman specializing in residential electrical troubleshooting, fan/appliance repairs, and safe panel installation."
+    bio: "Licensed wireman specializing in residential electrical troubleshooting, fan/appliance repairs, and safe panel installation.",
   },
   {
     name: "Murugan P.",
@@ -171,13 +220,14 @@ export const SEED_WORKERS = [
     badge: "Verified Cooperative Worker",
     cooperative: "Madurai Central Worker Co-op Society",
     coopId: "MDU-LAB-4401",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=300",
+    avatar:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=300",
     rating: 4.8,
     jobsCompleted: 135,
     onTimeRate: 95,
     reliabilityScore: 95,
-    latitude: 9.9290,
-    longitude: 78.1220,
+    latitude: 9.929,
+    longitude: 78.122,
     workloadCapacity: 35,
     workloadStatus: "Low",
     availability: "Available Now",
@@ -195,14 +245,171 @@ export const SEED_WORKERS = [
     practicalVerificationStatus: "VERIFIED",
     assessmentScore: 90,
     skills: [
-      { name: "Door hinge & lock fix", level: "Advanced", confidence: 96, evidence: "48 verified jobs" },
-      { name: "Custom cabinets", level: "Advanced", confidence: 92, evidence: "22 verified jobs" }
+      {
+        name: "Door hinge & lock fix",
+        level: "Advanced",
+        confidence: 96,
+        evidence: "48 verified jobs",
+      },
+      {
+        name: "Custom cabinets",
+        level: "Advanced",
+        confidence: 92,
+        evidence: "22 verified jobs",
+      },
     ],
     verifications: [
       "Cooperative Membership Verified",
       "Craftsman Guild Certified",
-      "Practically Verified Skill Assessment (90%)"
+      "Practically Verified Skill Assessment (90%)",
     ],
-    bio: "Custom woodworker and furniture repair specialist with 8 years of experience in structural door fixes and woodwork."
-  }
+    bio: "Custom woodworker and furniture repair specialist with 8 years of experience in structural door fixes and woodwork.",
+  },
 ];
+
+const createDemoWorker = ({
+  name,
+  title,
+  category,
+  coopId,
+  experienceYears = 3,
+}) => ({
+  name,
+  title,
+  category,
+  badge: "Verified Cooperative Worker",
+  cooperative: "Madurai District Labour Co-op Federation",
+  coopId,
+  avatar:
+    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300",
+  rating: 4.6,
+  jobsCompleted: 42,
+  onTimeRate: 91,
+  reliabilityScore: 89,
+  latitude: 9.9252,
+  longitude: 78.1198,
+  workloadCapacity: 28,
+  workloadStatus: "Low",
+  availability: "Available Now",
+  isAvailable: true,
+  status: "AVAILABLE",
+  skillFitPercent: 88,
+  verifiedSkillLevel: "Verified",
+  experienceYears,
+  jobsCompleted7Days: 2,
+  jobsCompleted30Days: 8,
+  earnings7Days: 1400,
+  earnings30Days: 5600,
+  cohortOpportunityShare: "8%",
+  opportunityEquityScore: 86,
+  practicalVerificationStatus: "VERIFIED",
+  assessmentScore: 82,
+  skills: [
+    {
+      name: `${title.replace(" Specialist", "")} service`,
+      level: "Verified",
+      confidence: 88,
+      evidence: "Practical skill assessment completed",
+    },
+  ],
+  verifications: [
+    "Cooperative Membership Verified",
+    "Practically Verified Skill Assessment (82%)",
+  ],
+  bio: `Verified ${category} professional serving households and local businesses in Madurai.`,
+});
+
+const ADDITIONAL_DEMO_WORKERS = [
+  {
+    name: "Priya S.",
+    title: "Electrical Repair Specialist",
+    category: "electrical",
+    coopId: "MDU-LAB-5513",
+  },
+  {
+    name: "Jaya K.",
+    title: "Furniture Repair Specialist",
+    category: "carpentry",
+    coopId: "MDU-LAB-4402",
+  },
+  {
+    name: "Bala V.",
+    title: "Painting Specialist",
+    category: "painting",
+    coopId: "MDU-LAB-3201",
+  },
+  {
+    name: "Meena P.",
+    title: "Painting Specialist",
+    category: "painting",
+    coopId: "MDU-LAB-3202",
+    experienceYears: 5,
+  },
+  {
+    name: "Suresh A.",
+    title: "Cleaning Specialist",
+    category: "cleaning",
+    coopId: "MDU-LAB-3301",
+  },
+  {
+    name: "Kavitha R.",
+    title: "Cleaning Specialist",
+    category: "cleaning",
+    coopId: "MDU-LAB-3302",
+    experienceYears: 4,
+  },
+  {
+    name: "Latha M.",
+    title: "Caregiving Specialist",
+    category: "caregiving",
+    coopId: "MDU-LAB-3401",
+    experienceYears: 6,
+  },
+  {
+    name: "Asha T.",
+    title: "Caregiving Specialist",
+    category: "caregiving",
+    coopId: "MDU-LAB-3402",
+  },
+  {
+    name: "Mani R.",
+    title: "Driving Specialist",
+    category: "driving",
+    coopId: "MDU-LAB-3501",
+    experienceYears: 7,
+  },
+  {
+    name: "Dinesh P.",
+    title: "Driving Specialist",
+    category: "driving",
+    coopId: "MDU-LAB-3502",
+  },
+  {
+    name: "Selvam J.",
+    title: "Gardening Specialist",
+    category: "gardening",
+    coopId: "MDU-LAB-3601",
+  },
+  {
+    name: "Uma N.",
+    title: "Gardening Specialist",
+    category: "gardening",
+    coopId: "MDU-LAB-3602",
+    experienceYears: 4,
+  },
+  {
+    name: "Vijay K.",
+    title: "Technician Specialist",
+    category: "technician",
+    coopId: "MDU-LAB-3701",
+    experienceYears: 5,
+  },
+  {
+    name: "Rekha S.",
+    title: "Technician Specialist",
+    category: "technician",
+    coopId: "MDU-LAB-3702",
+  },
+].map(createDemoWorker);
+
+SEED_WORKERS.push(...ADDITIONAL_DEMO_WORKERS);
