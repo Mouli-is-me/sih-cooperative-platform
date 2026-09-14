@@ -4654,3 +4654,468 @@ a {
     width: 100%;
   }
 }
+
+/* ========================================================================== */
+/* 12. RESPONSIVE LAYOUT SAFETY */
+/* ========================================================================== */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  button,
+  a {
+    max-width: 100%;
+  }
+
+  .demo-controls-toolbar {
+    padding: 6px 16px;
+  }
+
+  .toolbar-bar-header,
+  .toolbar-body-content {
+    width: 100%;
+  }
+
+  .toolbar-body-content {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .navbar-inner {
+    min-height: 68px;
+    height: auto;
+    padding: 10px 16px;
+    gap: 10px;
+  }
+
+  .navbar-brand {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .logo-text {
+    min-width: 0;
+  }
+
+  .brand-title {
+    font-size: 17px;
+  }
+
+  .brand-subtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .navbar-actions {
+    flex: 0 0 auto;
+    gap: 8px;
+  }
+
+  .navbar-actions > div {
+    max-width: 100%;
+  }
+
+  .navbar-links.mobile-open {
+    top: 68px;
+  }
+
+  .hero-section,
+  .philosophy-section,
+  .services-section,
+  .closed-loop-section,
+  .cta-banner-section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .hero-title {
+    font-size: clamp(30px, 7vw, 42px);
+    letter-spacing: -0.8px;
+  }
+
+  .hero-subtitle,
+  .section-header p,
+  .loop-sub,
+  .cta-banner-container p {
+    overflow-wrap: anywhere;
+  }
+
+  .section-header,
+  .loop-header {
+    margin-bottom: 30px;
+  }
+
+  .section-header h2,
+  .loop-title,
+  .cta-banner-container h2,
+  .pulse-title-area h2,
+  .results-main-title {
+    font-size: clamp(25px, 6vw, 34px);
+    letter-spacing: -0.4px;
+  }
+
+  .service-intent-box,
+  .hero-visual-card,
+  .intent-processing-card,
+  .traditional-vs-fairmatch-card,
+  .fairmatch-explanation-panel,
+  .opportunity-balance-card,
+  .worker-match-card,
+  .skill-passport-container,
+  .request-timeline-card,
+  .worker-section-card,
+  .pulse-hero-header,
+  .pulse-card,
+  .closed-loop-container,
+  .backend-panel,
+  .auth-card,
+  .signup-card {
+    padding: 20px;
+  }
+
+  .philosophy-cards-grid,
+  .services-grid,
+  .pulse-metrics-grid,
+  .pulse-analytics-layout,
+  .gaps-grid,
+  .summary-grid,
+  .worker-compare-strip,
+  .worker-stats-grid,
+  .skills-meter-grid,
+  .form-grid,
+  .verification-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .loop-flow-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .conf-details-grid,
+  .card-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .passport-hero-section {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .passport-avatar-box,
+  .passport-quick-tags {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .passport-quick-tags {
+    justify-content: center;
+  }
+
+  .passport-body {
+    padding: 24px 20px;
+  }
+
+  .passport-banner,
+  .worker-header-banner,
+  .pulse-hero-header,
+  .backend-hero,
+  .backend-status-strip,
+  .signup-header,
+  .dash-header,
+  .req-card-header,
+  .assigned-worker-banner,
+  .w-sec-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .worker-header-banner,
+  .pulse-hero-header {
+    gap: 22px;
+  }
+
+  .w-workload-status-card,
+  .pulse-index-card {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .worker-hero-profile {
+    width: 100%;
+  }
+
+  .results-page-view,
+  .customer-dashboard-page,
+  .worker-dashboard-page,
+  .cooperative-dashboard-page,
+  .skill-passport-wrapper,
+  .center-processing-wrapper {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .priority-row,
+  .tvf-bar-row,
+  .workload-item-row,
+  .trend-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .timeline-steps-track {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px 10px;
+  }
+
+  .tvf-outcome-banner,
+  .timeline-demo-controls,
+  .input-action-bar,
+  .card-actions-row,
+  .footer-inner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .input-action-bar > *,
+  .card-actions-row > *,
+  .timeline-demo-controls > *,
+  .btn-new-request,
+  .backend-refresh-btn,
+  .btn-request-passport,
+  .auth-primary-btn,
+  .btn-primary-card,
+  .btn-secondary-card,
+  .btn-decline,
+  .btn-accept {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .req-meta-badges,
+  .worker-name-row,
+  .visual-worker-row,
+  .op-title-row {
+    flex-wrap: wrap;
+  }
+
+  .worker-name-row {
+    gap: 8px;
+  }
+
+  .worker-name,
+  .req-task-title,
+  .assigned-name,
+  .passport-name {
+    overflow-wrap: anywhere;
+  }
+
+  .worker-match-card .card-top-header {
+    flex-wrap: wrap;
+  }
+
+  .worker-main-info {
+    min-width: 0;
+    flex-basis: calc(100% - 100px);
+  }
+
+  .fairmatch-score-badge-wrap {
+    margin-left: auto;
+  }
+
+  .history-table-card,
+  .history-list {
+    max-width: 100%;
+  }
+
+  .history-row {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .hist-meta-col {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .hist-worker-col,
+  .hist-price-col {
+    flex: 1 1 40%;
+  }
+
+  .hist-price-col {
+    text-align: left !important;
+  }
+
+  .backend-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .backend-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .backend-endpoint-list > div {
+    grid-template-columns: 54px minmax(0, 1fr) auto;
+  }
+
+  .backend-endpoint-list > div > span:nth-child(3) {
+    display: none;
+  }
+
+  .backend-endpoint-list code {
+    overflow-wrap: anywhere;
+  }
+
+  .modal-overlay {
+    align-items: flex-start !important;
+    overflow-y: auto;
+    padding: 12px !important;
+  }
+
+  .assessment-modal-card {
+    max-height: calc(100vh - 24px);
+    overflow-y: auto !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .demo-controls-toolbar {
+    font-size: 12px;
+  }
+
+  .tb-badge-group {
+    min-width: 0;
+  }
+
+  .tb-demo-pill {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .brand-subtitle {
+    display: none;
+  }
+
+  .navbar-actions .btn-primary-sm,
+  .navbar-actions .btn-secondary-sm {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .mobile-menu-toggle {
+    padding: 8px 4px;
+  }
+
+  .navbar-links.mobile-open {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .hero-section,
+  .philosophy-section,
+  .services-section,
+  .closed-loop-section,
+  .cta-banner-section,
+  .auth-page,
+  .backend-dashboard-page {
+    padding-top: 32px;
+    padding-bottom: 48px;
+  }
+
+  .hero-title {
+    font-size: 30px;
+  }
+
+  .hero-eyebrow,
+  .type-toggle-group,
+  .fairmatch-toggle-wrap {
+    max-width: 100%;
+  }
+
+  .type-toggle-group,
+  .fairmatch-toggle-wrap {
+    flex-wrap: wrap;
+  }
+
+  .intent-title,
+  .processing-header h2 {
+    font-size: 22px;
+  }
+
+  .service-intent-box,
+  .hero-visual-card,
+  .intent-processing-card,
+  .traditional-vs-fairmatch-card,
+  .fairmatch-explanation-panel,
+  .opportunity-balance-card,
+  .worker-match-card,
+  .skill-passport-container,
+  .request-timeline-card,
+  .worker-section-card,
+  .pulse-hero-header,
+  .pulse-card,
+  .closed-loop-container,
+  .backend-panel,
+  .auth-card,
+  .signup-card {
+    padding: 16px;
+  }
+
+  .loop-flow-grid,
+  .timeline-steps-track,
+  .conf-details-grid,
+  .card-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .passport-body {
+    padding: 20px 16px;
+  }
+
+  .assigned-worker-banner {
+    align-items: flex-start;
+  }
+
+  .assigned-eta-box {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .timeline-step-item {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .step-node-col {
+    justify-content: flex-start;
+  }
+
+  .backend-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .backend-panel-heading {
+    gap: 12px;
+  }
+
+  .footer-container {
+    padding: 44px 16px 24px;
+  }
+}
