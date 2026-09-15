@@ -30,12 +30,11 @@ export class LocalIntentEngine {
     const taskResult = this.classifyTask(serviceResult.categoryKey, text, normalization.normalizedText, entities);
 
     // Layer 10: Confidence Estimation
-    let confidence = 0.50;
-    if (serviceResult.categoryKey !== "UNKNOWN") confidence += 0.25;
-    if (taskResult.taskId) confidence += 0.15;
+    let confidence = serviceResult.confidence;
+    if (taskResult.taskId) confidence += 0.05;
     if (entities.place) confidence += 0.05;
     if (entities.time) confidence += 0.04;
-    confidence = Math.min(0.98, Math.max(0.30, Number(confidence.toFixed(2))));
+    confidence = Math.min(0.98, Math.max(0.10, Number(confidence.toFixed(2))));
 
     // Layer 11: Missing Fields Detection
     const missingFields = [];
@@ -44,17 +43,19 @@ export class LocalIntentEngine {
     if (!entities.place) missingFields.push("location");
     if (!entities.time) missingFields.push("preferredTime");
 
-    const categoryKey = serviceResult.categoryKey !== "UNKNOWN" ? serviceResult.categoryKey : "plumbing";
+    const categoryKey = serviceResult.categoryKey !== "UNKNOWN" ? serviceResult.categoryKey : "UNKNOWN";
     const serviceCategory = categoryKey.toUpperCase();
-    const task = taskResult.taskId || "TAP_REPAIR";
+    const task = taskResult.taskId || (categoryKey !== "UNKNOWN" ? Object.keys(TAXONOMY[serviceCategory]?.tasks || {})[0] || "GENERAL" : null);
 
     // Explanatory summary
-    const localizedCat = getLocalizedCategoryName(categoryKey, langDetection.primaryLang);
-    const localizedTask = getLocalizedTaskName(categoryKey, task, langDetection.primaryLang);
-
-    const explanation = confidence >= 0.75
-      ? `Understood request as ${serviceCategory} (${task}) for ${entities.place || 'location'} (${entities.time || 'Today'}).`
-      : `Broad intent detected for ${serviceCategory}. Please clarify specific task details.`;
+    let explanation;
+    if (confidence < 0.50 || categoryKey === "UNKNOWN") {
+      explanation = "Could you please tell us whether this is related to Drainage, Plumbing, Electrical, or Construction?";
+    } else if (confidence >= 0.75) {
+      explanation = `Understood request as ${serviceCategory} (${task}) for ${entities.place || 'location'} (${entities.time || 'Today'}).`;
+    } else {
+      explanation = `Broad intent detected for ${serviceCategory}. Please clarify specific task details.`;
+    }
 
     return {
       language: langDetection.primaryLang,
@@ -66,7 +67,7 @@ export class LocalIntentEngine {
       serviceCategory,
       categoryKey,
       task,
-      taskDetail: localizedTask,
+      taskDetail: task ? getLocalizedTaskName(categoryKey, task, langDetection.primaryLang) : null,
       urgency: entities.urgency,
       urgencyBadge: entities.urgency === "HIGH" ? "High Urgency (Today)" : "Standard",
       preferredTime: entities.time || "TODAY",
@@ -80,54 +81,156 @@ export class LocalIntentEngine {
   }
 
   classifyServiceCategory(rawText, normalizedText, langCode) {
-    const combined = `${rawText} ${normalizedText}`.toLowerCase();
+    let combined = `${rawText} ${normalizedText}`.toLowerCase();
+    
+    // Spelling variations & Normalizations
+    const spellingMap = {
+      "aaguthu": ["aguthu", "aagudhu", "agudhu"],
+      "irukku": ["iruku", "irukudhu"],
+      "pannanum": ["pananum"],
+      "pogala": ["pogalae", "pogave illa"],
+      "aagala": ["agala"],
+      "check": ["chek"],
+      "repair": ["repaire"],
+      "leak": ["leakage", "leeking"],
+      "block": ["blockage", "clog"],
+      "water": ["watter", "thanni"],
+      "current": ["electricity", "power"],
+      "crack": [" ಬಿರುಕು", "விரிசல்"],
+    };
 
-    const locale = LOCALES[langCode] || LOCALES.en;
-
-    // Direct match against locale synonyms
-    for (const [catKey, synonymList] of Object.entries(locale.synonyms)) {
-      for (const syn of synonymList) {
-        if (combined.includes(syn.toLowerCase())) {
-          return { categoryKey: catKey.toLowerCase(), confidence: 0.90 };
-        }
+    for (const [correct, variants] of Object.entries(spellingMap)) {
+      for (const variant of variants) {
+        combined = combined.replaceAll(variant, correct);
       }
     }
 
-    // Cross-locale fallback search
+    const scores = { drainage: 0, plumbing: 0, electrical: 0, construction: 0, carpentry: 0, painting: 0, cleaning: 0, caregiving: 0, gardening: 0, driving: 0, technician: 0 };
+
+    // Contextual multi-symptom rules
+    if (combined.includes("water") && combined.includes("nikkuthu")) scores.drainage += 2;
+    if (combined.includes("water") && combined.includes("pogala")) scores.drainage += 2;
+    if (combined.includes("smell") && combined.includes("drainage")) scores.drainage += 2;
+    if (combined.includes("waste") && combined.includes("stuck")) scores.drainage += 2;
+    if (combined.includes("sink") && combined.includes("block")) scores.drainage += 2;
+    if (combined.includes("drainage")) scores.drainage += 1.5;
+    
+    if (combined.includes("tap") && combined.includes("leak")) scores.plumbing += 2;
+    if (combined.includes("tap") && combined.includes("water")) scores.plumbing += 1.5;
+    if (combined.includes("water") && combined.includes("waste")) scores.plumbing += 1.5;
+    if (combined.includes("pipe") && combined.includes("damage")) scores.plumbing += 1.5;
+    if (combined.includes("water") && combined.includes("leak")) scores.plumbing += 1.5;
+
+    if (combined.includes("current") && combined.includes("problem")) scores.electrical += 2;
+    if (combined.includes("light") && combined.includes("eriyala")) scores.electrical += 2;
+    if (combined.includes("light") && combined.includes("work aagala")) scores.electrical += 2;
+    if (combined.includes("fan") && combined.includes("slow")) scores.electrical += 2;
+    if (combined.includes("switch") && combined.includes("varala")) scores.electrical += 2;
+    if (combined.includes("charge") && combined.includes("aagala")) scores.electrical += 2;
+    if (combined.includes("current") && combined.includes("illa")) scores.electrical += 2;
+
+    if (combined.includes("wall") && combined.includes("crack")) scores.construction += 2;
+    if (combined.includes("floor") && combined.includes("level")) scores.construction += 2;
+    if (combined.includes("roof") && combined.includes("leak")) scores.construction += 2;
+    if (combined.includes("cement") && combined.includes("work")) scores.construction += 2;
+    if (combined.includes("door") && combined.includes("fit")) scores.construction += 2;
+    
+    // Priority resolution (e.g. roof leak = construction, bathroom pipe leak = plumbing)
+    if (combined.includes("roof") && combined.includes("leak")) {
+        scores.construction += 3;
+        scores.plumbing = 0; // override
+    }
+    if (combined.includes("bathroom") && combined.includes("pipe") && combined.includes("leak")) {
+        scores.plumbing += 3;
+        scores.construction = 0; // override
+    }
+    if (combined.includes("kitchen") && combined.includes("sink") && combined.includes("water")) {
+        scores.drainage += 3;
+    }
+
+    // Direct match against locale synonyms
     for (const [locKey, locObj] of Object.entries(LOCALES)) {
       for (const [catKey, synonymList] of Object.entries(locObj.synonyms)) {
         for (const syn of synonymList) {
           if (combined.includes(syn.toLowerCase())) {
-            return { categoryKey: catKey.toLowerCase(), confidence: 0.85 };
+            scores[catKey.toLowerCase()] = (scores[catKey.toLowerCase()] || 0) + 1;
           }
         }
       }
     }
 
-    return { categoryKey: "UNKNOWN", confidence: 0.30 };
+    let topCategory = "UNKNOWN";
+    let maxScore = 0;
+    
+    for (const [cat, score] of Object.entries(scores)) {
+      if (score > maxScore) {
+        maxScore = score;
+        topCategory = cat;
+      }
+    }
+
+    if (maxScore === 0) {
+      return { categoryKey: "UNKNOWN", confidence: 0.30 };
+    }
+
+    // Convert score to confidence roughly
+    let conf = Math.min(0.95, 0.5 + (maxScore * 0.15));
+    return { categoryKey: topCategory, confidence: conf };
   }
 
   classifyTask(categoryKey, rawText, normalizedText, entities) {
-    const combined = `${rawText} ${normalizedText}`.toLowerCase();
+    let combined = `${rawText} ${normalizedText}`.toLowerCase();
+    const spellingMap = {
+      "aaguthu": ["aguthu", "aagudhu", "agudhu"],
+      "irukku": ["iruku", "irukudhu"],
+      "pogala": ["pogalae", "pogave illa"],
+      "aagala": ["agala"],
+      "leak": ["leakage", "leeking"],
+      "block": ["blockage", "clog"],
+    };
+    for (const [correct, variants] of Object.entries(spellingMap)) {
+      for (const variant of variants) {
+        combined = combined.replaceAll(variant, correct);
+      }
+    }
+
     const catUpper = (categoryKey || "").toUpperCase();
     const cat = TAXONOMY[catUpper];
 
     if (!cat) {
-      return { taskId: "TAP_REPAIR", estimatedDuration: "30–60 min" };
+      return { taskId: null, estimatedDuration: "30-60 min" };
     }
 
-    // Match task based on extracted object & problem
-    if (entities.object === "tap" || combined.includes("tap") || combined.includes("குழாய்") || combined.includes("नल")) {
-      return { taskId: "TAP_REPAIR", estimatedDuration: TAXONOMY.PLUMBING.tasks.TAP_REPAIR.estimatedDuration };
+    let detectedTask = null;
+    
+    // Look through tasks defined in the selected category
+    for (const [taskId, taskInfo] of Object.entries(cat.tasks)) {
+      // Find keywords for this task in locales (en specifically)
+      const taskKeywords = LOCALES.en.tasks?.[taskId] || [];
+      for (const kw of taskKeywords) {
+        if (combined.includes(kw.toLowerCase())) {
+          detectedTask = taskId;
+          break;
+        }
+      }
+      if (detectedTask) break;
     }
-    if (entities.object === "pipe" || combined.includes("pipe") || combined.includes("பைப்") || combined.includes("पाइप")) {
-      return { taskId: "PIPE_LEAK", estimatedDuration: TAXONOMY.PLUMBING.tasks.PIPE_LEAK.estimatedDuration };
+    
+    // Fallbacks based on explicit object checks if above missed
+    if (!detectedTask) {
+        if (entities.object === "tap" || combined.includes("tap") || combined.includes("குழாய்") || combined.includes("नल")) {
+            if (catUpper === 'PLUMBING') detectedTask = "TAP_REPAIR";
+        } else if (entities.object === "pipe" || combined.includes("pipe") || combined.includes("பைப்") || combined.includes("पाइप")) {
+            if (catUpper === 'PLUMBING') detectedTask = "PIPE_LEAK";
+        } else if (entities.object === "fan" || combined.includes("fan") || combined.includes("மின்விசிறி") || combined.includes("पंखा")) {
+            if (catUpper === 'ELECTRICAL') detectedTask = "FAN_REPAIR";
+        } else if (entities.object === "door" || combined.includes("door") || combined.includes("கதவு") || combined.includes("दरवाजा")) {
+            if (catUpper === 'CARPENTRY') detectedTask = "DOOR_REPAIR";
+        }
     }
-    if (entities.object === "fan" || combined.includes("fan") || combined.includes("மின்விசிறி") || combined.includes("पंखा")) {
-      return { taskId: "FAN_REPAIR", estimatedDuration: TAXONOMY.ELECTRICAL.tasks.FAN_REPAIR.estimatedDuration };
-    }
-    if (entities.object === "door" || combined.includes("door") || combined.includes("கதவு") || combined.includes("दरवाजा")) {
-      return { taskId: "DOOR_REPAIR", estimatedDuration: TAXONOMY.CARPENTRY.tasks.DOOR_REPAIR.estimatedDuration };
+
+    if (detectedTask) {
+        return { taskId: detectedTask, estimatedDuration: cat.tasks[detectedTask]?.estimatedDuration || "45 min" };
     }
 
     // Default to first task in category taxonomy

@@ -1,6 +1,23 @@
 // Language-Agnostic Canonical Service Taxonomy for CO-OP OS
 
 export const TAXONOMY = {
+  DRAINAGE: {
+    id: "DRAINAGE",
+    categoryKey: "drainage",
+    displayNames: {
+      en: "Drainage",
+      ta: "சாக்கடை & அடைப்பு (Drainage)",
+      hi: "जल निकासी (Drainage)"
+    },
+    tasks: {
+      DRAINAGE_CLEANING: {
+        id: "DRAINAGE_CLEANING",
+        displayNames: { en: "Drainage Blockage Clearing", ta: "சாக்கடை அடைப்பு நீக்கம்", hi: "नाली की सफाई" },
+        estimatedDuration: "60 min"
+      }
+    }
+  },
+
   PLUMBING: {
     id: "PLUMBING",
     categoryKey: "plumbing",
@@ -19,11 +36,6 @@ export const TAXONOMY = {
         id: "PIPE_LEAK",
         displayNames: { en: "Pipe Joint & Leak Repair", ta: "பைப் இனைப்பு கசிவு", hi: "पाइप रिसाव मरम्मत" },
         estimatedDuration: "45–90 min"
-      },
-      DRAINAGE: {
-        id: "DRAINAGE",
-        displayNames: { en: "Drainage Blockage Clearing", ta: "சாக்கடை அடைப்பு நீக்கம்", hi: "नाली की सफाई" },
-        estimatedDuration: "60 min"
       },
       WATER_TANK: {
         id: "WATER_TANK",
@@ -71,6 +83,38 @@ export const TAXONOMY = {
         id: "APPLIANCE_INSTALLATION",
         displayNames: { en: "Electrical Appliance Setup", ta: "மின் சாதனங்கள் பொருத்துதல்", hi: "उपकरण स्थापना" },
         estimatedDuration: "45–90 min"
+      }
+    }
+  },
+
+  CONSTRUCTION: {
+    id: "CONSTRUCTION",
+    categoryKey: "construction",
+    displayNames: {
+      en: "Construction",
+      ta: "கட்டுமான வேலை (Construction)",
+      hi: "निर्माण (Construction)"
+    },
+    tasks: {
+      WALL_CRACK: {
+        id: "WALL_CRACK",
+        displayNames: { en: "Wall Crack & Plaster Repair", ta: "சுவர் விரிசல் & பிளாஸ்டர்", hi: "दीवार दरार मरम्मत" },
+        estimatedDuration: "2–4 hours"
+      },
+      ROOF_LEAK: {
+        id: "ROOF_LEAK",
+        displayNames: { en: "Roof Leakage & Sealing", ta: "கூரை கசிவு சரிசெய்தல்", hi: "छत रिसाव मरम्मत" },
+        estimatedDuration: "4–6 hours"
+      },
+      FLOOR_LEVELING: {
+        id: "FLOOR_LEVELING",
+        displayNames: { en: "Floor Leveling & Cement Work", ta: "தரை மட்டம் & சிமெண்ட்", hi: "फर्श सीमेंट का काम" },
+        estimatedDuration: "Full Day"
+      },
+      FITTING_REPAIR: {
+        id: "FITTING_REPAIR",
+        displayNames: { en: "Door/Window Fitting & Repair", ta: "கதவு/ஜன்னல் பொருத்துதல்", hi: "दरवाजा/खिड़की फिटिंग" },
+        estimatedDuration: "2–4 hours"
       }
     }
   },

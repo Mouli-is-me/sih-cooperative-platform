@@ -2,6 +2,8 @@ export default {
   code: "hi",
   name: "Hindi",
   synonyms: {
+    DRAINAGE: ['drainage', 'block', 'blockage', 'stagnation', 'clog', 'drain', 'waste water', 'sink block', 'smell', 'clean'],
+    CONSTRUCTION: ['construction', 'wall', 'crack', 'floor', 'level', 'cement', 'plaster', 'roof', 'building', 'damage'],
     PLUMBING: [
       "नल", "रिसाव", "पानी", "प्लंबर", "पाइप", "नाली", "टैंक", "टॉयलेट", "लीक",
       "plumber", "plumbr", "plumer", "tap", "leak", "pipe", "water", "drain",

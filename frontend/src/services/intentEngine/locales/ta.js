@@ -2,6 +2,8 @@ export default {
   code: "ta",
   name: "Tamil",
   synonyms: {
+    DRAINAGE: ['drainage', 'block', 'blockage', 'stagnation', 'clog', 'drain', 'waste water', 'sink block', 'nikkuthu', 'pogala', 'pogave illa', 'smell', 'clean'],
+    CONSTRUCTION: ['construction', 'wall', 'crack', 'floor', 'level', 'cement', 'plaster', 'roof', 'door fit', 'window fit', 'building', 'damage', 'suvar', 'terrace'],
     PLUMBING: [
       "குழாய்",
       "கசிகிறது",

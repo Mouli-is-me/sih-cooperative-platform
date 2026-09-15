@@ -2,15 +2,21 @@ export default {
   code: "en",
   name: "English",
   synonyms: {
+    DRAINAGE: [
+      "drain", "drainage", "clog", "blockage", "clogged", "sewer", "stagnation", "stagnant", "sink block"
+    ],
+    CONSTRUCTION: [
+      "construction", "wall crack", "floor", "cement", "plaster", "roof", "building", "structural"
+    ],
     PLUMBING: [
       "plumber", "pluming", "plumer", "plumbr", "tap", "leak", "pipe", "water",
-      "sink", "drain", "toilet", "flush", "faucet", "washbasin", "dripping",
+      "sink", "toilet", "flush", "faucet", "washbasin", "dripping",
       "water tank", "sump", "shower", "geyser pipe"
     ],
     ELECTRICAL: [
       "electrician", "electrican", "electrical", "fan", "spark", "light", "switch",
       "wire", "wiring", "shock", "fuse", "power", "short circuit", "mcb",
-      "plug", "socket", "regulator", "bulb", "tube light", "main board"
+      "plug", "socket", "regulator", "bulb", "tube light", "main board", "current", "charging point"
     ],
     CARPENTRY: [
       "carpenter", "carpentar", "wood", "door", "hinge", "table", "furniture",
@@ -18,7 +24,7 @@ export default {
     ],
     PAINTING: [
       "painter", "paint", "painting", "wall", "moisture", "dampness", "whitewash",
-      "waterproof", "emulsion", "primer", "color", "colour", "crack"
+      "waterproof", "emulsion", "primer", "color", "colour"
     ],
     CLEANING: [
       "cleaner", "clean", "cleaning", "dust", "sweep", "mop", "sanitize",
@@ -43,16 +49,20 @@ export default {
   tasks: {
     TAP_REPAIR: ["tap", "faucet", "drip", "tap leak", "washer", "kitchen tap", "bathroom tap"],
     PIPE_LEAK: ["pipe", "joint", "burst pipe", "pipe leak", "water line"],
-    DRAINAGE: ["drain", "drainage", "clog", "blockage", "clogged", "sewer"],
     WATER_TANK: ["tank", "water tank", "sump", "motor", "pump"],
     TOILET_REPAIR: ["toilet", "flush", "commode", "flush tank"],
+    DRAINAGE_CLEANING: ["drain", "drainage", "clog", "blockage", "clogged", "sewer"],
     FAN_REPAIR: ["fan", "ceiling fan", "regulator", "fan motor", "fan speed"],
     SWITCH_REPAIR: ["switch", "plug", "socket", "switchboard", "button"],
     WIRING: ["wire", "wiring", "short circuit", "spark", "fuse", "mcb", "shock"],
     LIGHT_REPAIR: ["light", "bulb", "tube light", "holder", "led"],
     DOOR_REPAIR: ["door", "hinge", "door lock", "latch", "door stuck"],
     FURNITURE_REPAIR: ["furniture", "chair", "table", "bed", "woodwork"],
-    AC_SERVICE: ["ac", "air conditioner", "ac gas", "ac filter", "cooling"]
+    AC_SERVICE: ["ac", "air conditioner", "ac gas", "ac filter", "cooling"],
+    WALL_CRACK: ["wall crack", "plaster", "crack"],
+    ROOF_LEAK: ["roof leak", "ceiling leak"],
+    FLOOR_LEVELING: ["floor level", "uneven floor", "cement work"],
+    FITTING_REPAIR: ["door fit", "window fit"]
   },
   urgency: {
     HIGH: ["urgent", "immediately", "now", "emergency", "asap", "today", "straightaway", "quick", "fast"],

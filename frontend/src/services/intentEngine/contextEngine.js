@@ -46,7 +46,7 @@ export const mergeIntentContext = (previousIntent = null, newExtractedIntent = {
   merged.missingFields = missing;
 
   if (merged.serviceCategory && merged.task && merged.entities && merged.entities.place) {
-    merged.confidence = Math.min(0.96, Math.max(merged.confidence || 0.70, 0.94));
+    merged.confidence = Math.min(0.98, Math.max(merged.confidence || 0.70, 0.94));
   }
 
   merged.rawText = `${previousIntent.originalText || previousIntent.rawText || ""} | ${newExtractedIntent.originalText || newExtractedIntent.rawText || ""}`.trim();
