@@ -3,13 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Shield,
   Users,
-  Sparkles,
+  Search,
   Building2,
   UserCheck,
-  Globe,
   Menu,
   X,
   Server,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import { getTranslation } from "../services/i18n.js";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -22,119 +23,118 @@ export default function Navbar({ currentLang, onChangeLang }) {
 
   const t = (key) => getTranslation(currentLang, key);
 
+  const NavItem = ({ to, icon: Icon, children }) => {
+    const isActive =
+      currentPath === to || (to === "/" && currentPath === "/find");
+    return (
+      <Link
+        to={to}
+        onClick={() => setMobileMenuOpen(false)}
+        className={`nav-item ${isActive ? "active" : ""}`}
+      >
+        <Icon size={16} />
+        <span>{children}</span>
+      </Link>
+    );
+  };
+
   return (
     <header className="navbar-container">
       <div className="navbar-inner">
-        {/* Brand Logo */}
-        <Link to="/" className="navbar-brand">
-          <div className="logo-badge">
-            <Shield className="logo-icon" size={22} />
-          </div>
-          <div className="logo-text">
+        <Link to="/" className="navbar-brand" aria-label="Co-op OS home">
+          <span className="logo-badge">
+            <Shield size={20} strokeWidth={2.4} />
+          </span>
+          <span className="brand-copy">
             <span className="brand-title">CO-OP OS</span>
-            <span className="brand-subtitle">{t("brandSubtitle")}</span>
-          </div>
+            <span className="brand-subtitle">
+              Local services, fairly matched
+            </span>
+          </span>
         </Link>
 
-        {/* Primary Navigation Links */}
-        <nav className={`navbar-links ${mobileMenuOpen ? "mobile-open" : ""}`}>
-          <Link
-            to="/"
-            className={`nav-item ${currentPath === "/" || currentPath === "/find" ? "active" : ""}`}
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            <Sparkles size={15} />
-            <span>{t("findWorkerNav")}</span>
-          </Link>
+        <button
+          className="mobile-menu-toggle"
+          type="button"
+          aria-label={mobileMenuOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((open) => !open)}
+        >
+          {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+        </button>
 
-          {isAuthenticated && (user?.role === "customer" || user?.role === "platform_admin") && (
-            <Link
-              to="/customer"
-              className={`nav-item ${currentPath === "/customer" ? "active" : ""}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Users size={15} />
-              <span>{t("customerPortalNav")}</span>
-            </Link>
-          )}
+        <nav
+          className={`navbar-links ${mobileMenuOpen ? "mobile-nav-open" : ""}`}
+          aria-label="Primary navigation"
+        >
+          <NavItem to="/" icon={Search}>
+            {t("findWorkerNav")}
+          </NavItem>
 
-          {isAuthenticated && (user?.role === "worker" || user?.role === "cooperative_member" || user?.role === "platform_admin") && (
-            <Link
-              to="/worker"
-              className={`nav-item ${currentPath === "/worker" ? "active" : ""}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <UserCheck size={15} />
-              <span>{t("workerPortalNav")}</span>
-            </Link>
-          )}
+          {isAuthenticated &&
+            (user?.role === "customer" || user?.role === "platform_admin") && (
+              <NavItem to="/customer" icon={Users}>
+                {t("customerPortalNav")}
+              </NavItem>
+            )}
 
-          {isAuthenticated && (user?.role === "cooperative_admin" || user?.role === "platform_admin") && (
-            <Link
-              to="/cooperative"
-              className={`nav-item ${currentPath === "/cooperative" ? "active" : ""}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Building2 size={15} />
-              <span>{t("coopPulseNav")}</span>
-            </Link>
-          )}
+          {isAuthenticated &&
+            (user?.role === "worker" ||
+              user?.role === "cooperative_member" ||
+              user?.role === "platform_admin") && (
+              <NavItem to="/worker" icon={UserCheck}>
+                {t("workerPortalNav")}
+              </NavItem>
+            )}
+
+          {isAuthenticated &&
+            (user?.role === "cooperative_admin" ||
+              user?.role === "platform_admin") && (
+              <NavItem to="/cooperative" icon={Building2}>
+                {t("coopPulseNav")}
+              </NavItem>
+            )}
 
           {isAuthenticated && user?.role === "platform_admin" && (
-            <Link
-              to="/backend"
-              className={`nav-item ${currentPath === "/backend" ? "active" : ""}`}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Server size={15} />
-              <span>Backend Ops</span>
-            </Link>
+            <NavItem to="/backend" icon={Server}>
+              Backend Ops
+            </NavItem>
           )}
         </nav>
 
-        {/* Action Buttons & 3-Language Selector */}
         <div className="navbar-actions">
-          <div className="nav-lang-picker">
-            <Globe size={14} />
-            <button
-              className={`lang-sub-btn ${currentLang === "en" ? "active" : ""}`}
-              onClick={() => onChangeLang("en")}
-            >
-              EN
-            </button>
-            <button
-              className={`lang-sub-btn ${currentLang === "ta" ? "active" : ""}`}
-              onClick={() => onChangeLang("ta")}
-            >
-              தமிழ்
-            </button>
-            <button
-              className={`lang-sub-btn ${currentLang === "hi" ? "active" : ""}`}
-              onClick={() => onChangeLang("hi")}
-            >
-              हिन्दी
-            </button>
+          <div className="nav-lang-picker" aria-label="Language">
+            {["en", "ta", "hi"].map((lang) => (
+              <button
+                key={lang}
+                onClick={() => onChangeLang(lang)}
+                className={`lang-sub-btn ${currentLang === lang ? "active" : ""}`}
+                aria-pressed={currentLang === lang}
+              >
+                {lang}
+              </button>
+            ))}
           </div>
 
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button onClick={() => { logout(); setMobileMenuOpen(false); }} className="btn-secondary-sm">
-                Sign out
-              </button>
-            </div>
+            <button
+              className="btn-secondary-sm nav-auth-btn"
+              onClick={() => {
+                logout();
+                setMobileMenuOpen(false);
+              }}
+            >
+              <LogOut size={16} /> <span>Sign out</span>
+            </button>
           ) : (
-            <Link to="/signin" className="btn-primary-sm" onClick={() => setMobileMenuOpen(false)}>
-              Sign in
+            <Link
+              to="/signin"
+              className="btn-primary-sm nav-auth-btn"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <LogIn size={16} /> <span>Sign in</span>
             </Link>
           )}
-
-          <button
-            className="mobile-menu-toggle"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
         </div>
       </div>
     </header>

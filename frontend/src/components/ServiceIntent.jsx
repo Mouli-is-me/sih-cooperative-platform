@@ -1,99 +1,36 @@
 import React, { useState } from "react";
+import VoiceInputButton from "./VoiceInputButton.jsx";
+import { parseServiceIntent } from "../services/intentParser.js";
+import { getTranslation } from "../services/i18n.js";
+import IntentConfirmationCard from "./IntentConfirmationCard.jsx";
 import {
   ArrowRight,
-  Sparkles,
-  AlertCircle,
-  Building2,
   User,
-  Info,
+  Building2,
+  AlertCircle,
   HelpCircle,
 } from "lucide-react";
-import { getTranslation } from "../services/i18n.js";
-import VoiceInputButton from "./VoiceInputButton.jsx";
-import IntentConfirmationCard from "./IntentConfirmationCard.jsx";
-import { parseServiceIntent } from "../services/intentParser.js";
 
-export default function ServiceIntent({
-  onSubmitIntent,
-  initialText = "",
-  currentLang = "en",
-}) {
-  const [inputText, setInputText] = useState(initialText);
-  const [customerType, setCustomerType] = useState("Household"); // Household | Institution
-  const [errorMsg, setErrorMsg] = useState("");
+export default function ServiceIntent({ onSubmitIntent, currentLang = "en" }) {
+  const [inputText, setInputText] = useState("");
+  const [customerType, setCustomerType] = useState("Household");
   const [activeIntent, setActiveIntent] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const t = (key) => getTranslation(currentLang, key);
 
   const samplePrompts = [
-    {
-      text: "Bro my kitchen tap has been leaking since morning, can someone come today?",
-      label: "English Casual",
-    },
-    {
-      text: "Anna kitchen tap morning la irundhu leak aaguthu, innike plumber venum.",
-      label: "Tanglish",
-    },
-    {
-      text: "Bhai kitchen ka tap leak ho raha hai, aaj plumber chahiye.",
-      label: "Hinglish",
-    },
-    {
-      text: "அண்ணா, காலையில இருந்து கிச்சன் டேப் கசிகிறது, இன்னைக்கு யாராவது வர முடியுமா?",
-      label: "Tamil",
-    },
-    {
-      text: "भाई सुबह से किचन का नल लीक हो रहा है, आज कोई आ सकता है क्या?",
-      label: "Hindi",
-    },
+    { text: "Bathroom water correct ah veliya pogala sir" },
+    { text: "Tap close pannalum water stop aagala" },
+    { text: "One room la current illa" },
+    { text: "Roof la water leakage aaguthu" },
   ];
 
   const quickCategories = [
-    {
-      key: "plumbing",
-      name:
-        currentLang === "ta"
-          ? "குழாய் வேலை"
-          : currentLang === "hi"
-            ? "प्लंबिंग"
-            : "Plumbing",
-    },
-    {
-      key: "electrical",
-      name:
-        currentLang === "ta"
-          ? "மின்சார வேலை"
-          : currentLang === "hi"
-            ? "इलेक्ट्रिकल"
-            : "Electrical",
-    },
-    {
-      key: "carpentry",
-      name:
-        currentLang === "ta"
-          ? "தச்சர் வேலை"
-          : currentLang === "hi"
-            ? "बढ़ईगीरी"
-            : "Carpentry",
-    },
-    {
-      key: "painting",
-      name:
-        currentLang === "ta"
-          ? "பெயிண்டிங்"
-          : currentLang === "hi"
-            ? "पेंटिंग"
-            : "Painting",
-    },
-    {
-      key: "cleaning",
-      name:
-        currentLang === "ta"
-          ? "சுத்தம் செய்தல்"
-          : currentLang === "hi"
-            ? "सफाई"
-            : "Cleaning",
-    },
+    { key: "drainage", name: "Drainage" },
+    { key: "plumbing", name: "Plumbing" },
+    { key: "electrical", name: "Electrical" },
+    { key: "construction", name: "Construction" },
   ];
 
   const handleTextChange = (val) => {
@@ -109,7 +46,6 @@ export default function ServiceIntent({
   };
 
   const handleSpeechTranscribed = (transcript) => {
-    setInputText(transcript);
     handleTextChange(transcript);
   };
 
@@ -124,11 +60,7 @@ export default function ServiceIntent({
   };
 
   const handleChipClick = (promptText) => {
-    setInputText(promptText);
-    setErrorMsg("");
-    const parsed = parseServiceIntent(promptText);
-    parsed.customerType = customerType;
-    setActiveIntent(parsed);
+    handleTextChange(promptText);
   };
 
   const handleClarificationChoice = (catKey) => {
@@ -143,127 +75,95 @@ export default function ServiceIntent({
   };
 
   return (
-    <div className="service-intent-box">
-      <div className="intent-header">
-        <div className="intent-top-meta">
-          <div className="intent-eyebrow">
-            <Sparkles size={14} className="sparkle-icon" />
-            <span>{t("intentEyebrow")}</span>
-          </div>
-
-          {/* Household vs Institution Request Type Switcher */}
-          <div className="type-toggle-group">
-            <button
-              type="button"
-              className={`type-btn ${customerType === "Household" ? "active" : ""}`}
-              onClick={() => setCustomerType("Household")}
-            >
-              <User size={13} /> {t("household")}
-            </button>
-            <button
-              type="button"
-              className={`type-btn ${customerType === "Institution" ? "active" : ""}`}
-              onClick={() => setCustomerType("Institution")}
-            >
-              <Building2 size={13} /> {t("institution")}
-            </button>
-          </div>
+    <div style={{ backgroundColor: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '24px', boxShadow: 'var(--shadow-sm)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--color-ink)', margin: 0 }}>What service do you need?</h3>
+        <div style={{ display: 'flex', backgroundColor: 'var(--color-bg-muted)', borderRadius: 'var(--radius-sm)', padding: '4px' }}>
+          <button
+            type="button"
+            onClick={() => setCustomerType("Household")}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.875rem', fontWeight: '500', borderRadius: '4px', backgroundColor: customerType === "Household" ? 'var(--color-bg-surface)' : 'transparent', color: customerType === "Household" ? 'var(--color-ink)' : 'var(--color-text-muted)', boxShadow: customerType === "Household" ? 'var(--shadow-sm)' : 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <User size={14} /> Household
+          </button>
+          <button
+            type="button"
+            onClick={() => setCustomerType("Institution")}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '0.875rem', fontWeight: '500', borderRadius: '4px', backgroundColor: customerType === "Institution" ? 'var(--color-bg-surface)' : 'transparent', color: customerType === "Institution" ? 'var(--color-ink)' : 'var(--color-text-muted)', boxShadow: customerType === "Institution" ? 'var(--shadow-sm)' : 'none', border: 'none', cursor: 'pointer' }}
+          >
+            <Building2 size={14} /> Commercial
+          </button>
         </div>
-
-        <h3 className="intent-title">{t("intentTitle")}</h3>
-        <p className="intent-sub">{t("intentSub")}</p>
-
-        {customerType === "Institution" && (
-          <div className="institution-notice-box">
-            <Info size={14} />
-            <span>{t("institutionNotice")}</span>
-          </div>
-        )}
       </div>
 
-      <form onSubmit={handleSubmit} className="intent-form">
-        <div className="textarea-wrapper">
-          <textarea
-            className="intent-input"
-            rows={3}
-            placeholder={t("inputPlaceholder")}
-            value={inputText}
-            onChange={(e) => handleTextChange(e.target.value)}
-          />
+      <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
+        <textarea
+          rows={3}
+          placeholder="Describe the problem in your own words. Tamil, English, or Tanglish are supported."
+          value={inputText}
+          onChange={(e) => handleTextChange(e.target.value)}
+          style={{ width: '100%', padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '1rem', color: 'var(--color-ink)', backgroundColor: 'var(--color-bg-base)', resize: 'none', transition: 'border-color var(--transition-fast)', outline: 'none', marginBottom: '16px' }}
+          onFocus={(e) => e.target.style.borderColor = 'var(--color-primary)'}
+          onBlur={(e) => e.target.style.borderColor = 'var(--color-border)'}
+        />
 
-          <div className="input-action-bar">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginRight: '8px', alignSelf: 'center' }}>Examples:</span>
+            {samplePrompts.map((p, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleChipClick(p.text)}
+                style={{ fontSize: '0.875rem', padding: '4px 10px', backgroundColor: 'var(--color-bg-muted)', border: 'none', borderRadius: 'var(--radius-sm)', color: 'var(--color-ink-soft)', cursor: 'pointer', transition: 'var(--transition-fast)' }}
+                onMouseOver={(e) => {e.currentTarget.style.backgroundColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-ink)'}}
+                onMouseOut={(e) => {e.currentTarget.style.backgroundColor = 'var(--color-bg-muted)'; e.currentTarget.style.color = 'var(--color-ink-soft)'}}
+              >
+                "{p.text}"
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <VoiceInputButton
               currentLang={currentLang}
               onSpeechTranscribed={handleSpeechTranscribed}
             />
 
-            <button type="submit" className="intent-submit-btn">
-              <span>{t("findRightWorkerBtn")}</span>
-              <ArrowRight size={18} />
+            <button type="submit" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '600', cursor: 'pointer', transition: 'var(--transition-fast)' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
+            >
+              Request Service <ArrowRight size={18} />
             </button>
           </div>
         </div>
 
         {errorMsg && (
-          <div className="intent-error">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-error)', fontSize: '0.875rem', marginTop: '12px' }}>
             <AlertCircle size={14} />
             <span>{errorMsg}</span>
           </div>
         )}
       </form>
 
-      {/* Low Confidence / Ambiguous Clarification Prompt */}
-      {activeIntent && activeIntent.confidence < 0.75 && (
-        <div
-          className="low-confidence-clarification-box"
-          style={{
-            background: "#FFF7ED",
-            border: "1px solid #FFEDD5",
-            padding: "14px 18px",
-            borderRadius: "12px",
-            margin: "16px 0",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "8px",
-              color: "#C2410C",
-            }}
-          >
+      {/* Clarification Prompt for unknown inputs */}
+      {activeIntent && (activeIntent.confidence < 0.5 || activeIntent.categoryKey === 'UNKNOWN') && (
+        <div style={{ marginTop: '16px', padding: '16px', backgroundColor: 'var(--color-warning-light)', border: '1px solid #fcd34d', borderRadius: 'var(--radius-md)' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", color: "#b45309" }}>
             <HelpCircle size={16} />
-            <strong style={{ fontSize: "0.9rem" }}>
-              What type of service do you need help with?
-            </strong>
+            <strong style={{ fontSize: "0.95rem" }}>What type of service do you need?</strong>
           </div>
-          <p
-            style={{
-              fontSize: "0.85rem",
-              color: "#64748B",
-              margin: "0 0 10px 0",
-            }}
-          >
-            Select a service category to clarify your request:
+          <p style={{ fontSize: "0.875rem", color: "#b45309", marginBottom: "12px" }}>
+            We couldn't accurately determine the service needed. Please select a category to clarify:
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {quickCategories.map((cat) => (
               <button
                 key={cat.key}
                 type="button"
-                className="preset-chip"
                 onClick={() => handleClarificationChoice(cat.key)}
-                style={{
-                  background: "#FFFFFF",
-                  border: "1px solid #F97316",
-                  color: "#C2410C",
-                  padding: "6px 14px",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                  fontSize: "12.5px",
-                }}
+                style={{ background: "#ffffff", border: "1px solid #f59e0b", color: "#d97706", padding: "6px 14px", borderRadius: "var(--radius-sm)", cursor: "pointer", fontWeight: 500, fontSize: "0.875rem" }}
               >
                 + {cat.name}
               </button>
@@ -272,34 +172,17 @@ export default function ServiceIntent({
         </div>
       )}
 
-      {/* Explainable Intent Confirmation Card */}
-      {activeIntent && activeIntent.confidence >= 0.7 && (
-        <IntentConfirmationCard
-          intent={activeIntent}
-          currentLang={currentLang}
-          onConfirmIntent={() =>
-            onSubmitIntent(inputText, customerType, activeIntent)
-          }
-          onUpdateIntent={(updated) => setActiveIntent(updated)}
-        />
-      )}
-
-      {/* Preset Prompts Chips */}
-      <div className="intent-chips">
-        <span className="chips-label">{t("tryExamples")}</span>
-        <div className="chips-grid">
-          {samplePrompts.map((p, idx) => (
-            <button
-              key={idx}
-              type="button"
-              className="intent-chip-btn"
-              onClick={() => handleChipClick(p.text)}
-            >
-              <span className="chip-text">"{p.text}"</span>
-            </button>
-          ))}
+      {/* Recognized Intent Confirmed */}
+      {activeIntent && activeIntent.confidence >= 0.5 && activeIntent.categoryKey !== 'UNKNOWN' && (
+        <div style={{ marginTop: '24px' }}>
+          <IntentConfirmationCard
+            intent={activeIntent}
+            currentLang={currentLang}
+            onConfirmIntent={() => onSubmitIntent(inputText, customerType, activeIntent)}
+            onUpdateIntent={(updated) => setActiveIntent(updated)}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 }

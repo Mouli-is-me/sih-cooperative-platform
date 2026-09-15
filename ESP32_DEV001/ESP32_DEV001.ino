@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
+
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -20,14 +21,14 @@ const char* API_BASE =
   "https://sih-cooperative-platform.onrender.com/api";
 
 // =====================================================
-// DEVICE IDENTITY
+// DEVICE
 // =====================================================
 
 const char* DEVICE_CODE = "DEV-001";
 const char* DEVICE_KEY = "SIH-DEV001-2026";
 
 // =====================================================
-// HARDWARE PINS
+// PINS
 // =====================================================
 
 #define GREEN_LED_PIN 25
@@ -46,23 +47,14 @@ const char* DEVICE_KEY = "SIH-DEV001-2026";
 
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET -1
 #define OLED_ADDRESS 0x3C
 
 Adafruit_SSD1306 display(
   SCREEN_WIDTH,
   SCREEN_HEIGHT,
   &Wire,
-  OLED_RESET
+  -1
 );
-
-// =====================================================
-// PAGES
-// =====================================================
-
-int currentPage = 0;
-
-const int TOTAL_PAGES = 5;
 
 // =====================================================
 // DEVICE STATES
@@ -77,21 +69,24 @@ enum DeviceState {
 DeviceState deviceState = AVAILABLE;
 
 // =====================================================
-// BUTTON STATES
+// PAGE SYSTEM
 // =====================================================
 
-bool prevRawState = HIGH;
-bool nextRawState = HIGH;
+int currentPage = 0;
 
-bool prevStableState = HIGH;
-bool nextStableState = HIGH;
+const int TOTAL_PAGES = 5;
 
-unsigned long prevLastChange = 0;
-unsigned long nextLastChange = 0;
+// =====================================================
+// BUTTON SETTINGS
+// =====================================================
 
-bool bothHandled = false;
+const unsigned long DEBOUNCE_TIME = 30;
 
-const unsigned long DEBOUNCE_TIME = 50;
+bool lastButton1State = HIGH;
+bool lastButton2State = HIGH;
+
+unsigned long lastButton1Time = 0;
+unsigned long lastButton2Time = 0;
 
 // =====================================================
 // BACKEND POLLING
@@ -102,10 +97,10 @@ unsigned long lastBackendPoll = 0;
 const unsigned long BACKEND_POLL_INTERVAL = 3000;
 
 // =====================================================
-// CURRENT JOB
+// JOB REQUEST
 // =====================================================
 
-String currentJobId = "";
+bool jobRequestAlerted = false;
 
 // =====================================================
 // SETUP
@@ -119,12 +114,16 @@ void setup() {
   // GPIO
   // ---------------------------------------------------
 
-  pinMode(BUTTON_PREV_PIN, INPUT_PULLUP);
-  pinMode(BUTTON_NEXT_PIN, INPUT_PULLUP);
-
   pinMode(GREEN_LED_PIN, OUTPUT);
   pinMode(RED_LED_PIN, OUTPUT);
   pinMode(BUZZER_PIN, OUTPUT);
+
+  pinMode(BUTTON_PREV_PIN, INPUT_PULLUP);
+  pinMode(BUTTON_NEXT_PIN, INPUT_PULLUP);
+
+  digitalWrite(GREEN_LED_PIN, LOW);
+  digitalWrite(RED_LED_PIN, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
 
   // ---------------------------------------------------
   // OLED
@@ -140,7 +139,9 @@ void setup() {
         OLED_ADDRESS
       )) {
 
-    Serial.println("OLED NOT FOUND!");
+    Serial.println(
+      "OLED initialization failed"
+    );
 
     while (true) {
       delay(100);
@@ -154,14 +155,20 @@ void setup() {
   );
 
   // ---------------------------------------------------
-  // INITIAL STATE
+  // STARTUP
   // ---------------------------------------------------
-
-  setAvailable();
 
   showStartup();
 
-  delay(2000);
+  delay(1500);
+
+  // ---------------------------------------------------
+  // INITIAL STATE
+  // ---------------------------------------------------
+
+  deviceState = AVAILABLE;
+
+  updateLEDs();
 
   // ---------------------------------------------------
   // WIFI
@@ -171,26 +178,23 @@ void setup() {
 
   delay(1000);
 
-  // Initialize button states after startup
-  prevRawState = digitalRead(BUTTON_PREV_PIN);
-  nextRawState = digitalRead(BUTTON_NEXT_PIN);
+  // ---------------------------------------------------
+  // FIRST PAGE
+  // ---------------------------------------------------
 
-  prevStableState = prevRawState;
-  nextStableState = nextRawState;
-
-  showPage(currentPage);
+  showCurrentPage();
 }
 
 // =====================================================
-// MAIN LOOP
+// LOOP
 // =====================================================
 
 void loop() {
 
-  // Handle physical buttons continuously
+  // Handle physical buttons
   handleButtons();
 
-  // Poll backend every 3 seconds
+  // Poll backend
   if (
     millis() - lastBackendPoll >=
     BACKEND_POLL_INTERVAL
@@ -200,6 +204,8 @@ void loop() {
 
     pollBackend();
   }
+
+  delay(5);
 }
 
 // =====================================================
@@ -209,19 +215,9 @@ void loop() {
 void connectWiFi() {
 
   Serial.println();
-  Serial.println("Connecting to WiFi...");
-
-  display.clearDisplay();
-
-  display.setTextSize(1);
-
-  display.setCursor(20, 15);
-  display.println("CONNECTING");
-
-  display.setCursor(20, 30);
-  display.println("TO WIFI...");
-
-  display.display();
+  Serial.println(
+    "Connecting to WiFi..."
+  );
 
   WiFi.mode(WIFI_STA);
 
@@ -246,704 +242,96 @@ void connectWiFi() {
 
   Serial.println();
 
-  if (WiFi.status() == WL_CONNECTED) {
+  if (
+    WiFi.status() == WL_CONNECTED
+  ) {
 
-    Serial.println("WiFi connected!");
+    Serial.println(
+      "WiFi connected!"
+    );
 
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
+    Serial.print(
+      "IP address: "
+    );
 
-    display.clearDisplay();
-
-    display.setTextSize(1);
-
-    display.setCursor(25, 15);
-    display.println("WIFI CONNECTED");
-
-    display.setCursor(25, 30);
-    display.println("DEVICE: DEV-001");
-
-    display.setCursor(25, 45);
-    display.println("ONLINE");
-
-    display.display();
-
-    delay(1500);
+    Serial.println(
+      WiFi.localIP()
+    );
 
   } else {
 
     Serial.println(
-      "WiFi connection failed"
+      "WiFi connection FAILED"
     );
-
-    display.clearDisplay();
-
-    display.setTextSize(1);
-
-    display.setCursor(25, 20);
-    display.println("WIFI OFFLINE");
-
-    display.setCursor(15, 38);
-    display.println("Check credentials");
-
-    display.display();
-
-    delay(1500);
   }
 }
 
 // =====================================================
-// BACKEND POLLING
+// LED CONTROL
 // =====================================================
 
-void pollBackend() {
+void updateLEDs() {
 
-  // No WiFi
-  if (WiFi.status() != WL_CONNECTED) {
+  if (
+    deviceState == JOB_REQUESTED
+  ) {
 
-    Serial.println(
-      "WiFi disconnected. Reconnecting..."
+    // Red = new job waiting
+    digitalWrite(
+      RED_LED_PIN,
+      HIGH
     );
 
-    connectWiFi();
-
-    return;
-  }
-
-  WiFiClientSecure client;
-
-  // Prototype only.
-  // For production, use certificate validation.
-  client.setInsecure();
-
-  HTTPClient http;
-
-  String url =
-    String(API_BASE) +
-    "/hardware/device/" +
-    DEVICE_CODE +
-    "/state";
-
-  Serial.println();
-  Serial.println("Polling backend:");
-  Serial.println(url);
-
-  if (!http.begin(client, url)) {
-
-    Serial.println(
-      "HTTP connection failed"
-    );
-
-    return;
-  }
-
-  http.addHeader(
-    "X-Device-Code",
-    DEVICE_CODE
-  );
-
-  http.addHeader(
-    "X-Device-Key",
-    DEVICE_KEY
-  );
-
-  http.addHeader(
-    "Content-Type",
-    "application/json"
-  );
-
-  int httpCode =
-    http.GET();
-
-  Serial.print("HTTP Status: ");
-  Serial.println(httpCode);
-
-  if (httpCode == 200) {
-
-    String response =
-      http.getString();
-
-    Serial.println(
-      "Backend response:"
-    );
-
-    Serial.println(response);
-
-    processBackendResponse(
-      response
+    digitalWrite(
+      GREEN_LED_PIN,
+      LOW
     );
 
   } else {
 
-    Serial.print(
-      "Backend error: "
+    // Green = normal/accepted
+    digitalWrite(
+      RED_LED_PIN,
+      LOW
     );
 
-    Serial.println(
-      http.errorToString(
-        httpCode
-      )
+    digitalWrite(
+      GREEN_LED_PIN,
+      HIGH
     );
-  }
-
-  http.end();
-}
-
-// =====================================================
-// PROCESS BACKEND RESPONSE
-// =====================================================
-
-void processBackendResponse(
-  String response
-) {
-
-  // ---------------------------------------------------
-  // JOB REQUESTED
-  // ---------------------------------------------------
-
-  if (
-    response.indexOf(
-      "\"state\":\"JOB_REQUESTED\""
-    ) >= 0
-  ) {
-
-    // Only trigger notification once
-    if (
-      deviceState !=
-      JOB_REQUESTED
-    ) {
-
-      currentJobId =
-        extractJobId(response);
-
-      requestJob();
-    }
-
-    return;
-  }
-
-  // ---------------------------------------------------
-  // JOB ACCEPTED
-  // ---------------------------------------------------
-
-  if (
-    response.indexOf(
-      "\"state\":\"JOB_ACCEPTED\""
-    ) >= 0
-  ) {
-
-    if (
-      deviceState !=
-      JOB_ACCEPTED
-    ) {
-
-      deviceState =
-        JOB_ACCEPTED;
-
-      digitalWrite(
-        GREEN_LED_PIN,
-        HIGH
-      );
-
-      digitalWrite(
-        RED_LED_PIN,
-        LOW
-      );
-
-      digitalWrite(
-        BUZZER_PIN,
-        LOW
-      );
-
-      showJobAccepted();
-    }
-
-    return;
-  }
-
-  // ---------------------------------------------------
-  // AVAILABLE
-  // ---------------------------------------------------
-
-  if (
-    response.indexOf(
-      "\"state\":\"AVAILABLE\""
-    ) >= 0
-  ) {
-
-    if (
-      deviceState !=
-      AVAILABLE
-    ) {
-
-      setAvailable();
-
-      showPage(
-        currentPage
-      );
-    }
   }
 }
 
 // =====================================================
-// EXTRACT JOB ID
+// SHORT BUTTON BEEP
 // =====================================================
 
-String extractJobId(
-  String response
-) {
+void beepShort() {
 
-  String key =
-    "\"jobId\":\"";
-
-  int start =
-    response.indexOf(key);
-
-  if (start < 0) {
-    return "";
-  }
-
-  start += key.length();
-
-  int end =
-    response.indexOf(
-      "\"",
-      start
-    );
-
-  if (end < 0) {
-    return "";
-  }
-
-  return response.substring(
-    start,
-    end
-  );
-}
-
-// =====================================================
-// BUTTON HANDLING
-// =====================================================
-// Button 1 = PREVIOUS
-// Button 2 = NEXT
-// Both = ACCEPT JOB
-// =====================================================
-
-void handleButtons() {
-
-  unsigned long now = millis();
-
-  // ---------------------------------------------------
-  // Read raw buttons
-  // ---------------------------------------------------
-
-  bool prevRaw =
-    digitalRead(BUTTON_PREV_PIN);
-
-  bool nextRaw =
-    digitalRead(BUTTON_NEXT_PIN);
-
-  // ---------------------------------------------------
-  // Detect raw changes
-  // ---------------------------------------------------
-
-  if (prevRaw != prevRawState) {
-
-    prevRawState = prevRaw;
-
-    prevLastChange = now;
-  }
-
-  if (nextRaw != nextRawState) {
-
-    nextRawState = nextRaw;
-
-    nextLastChange = now;
-  }
-
-  // ---------------------------------------------------
-  // Confirm stable PREVIOUS state
-  // ---------------------------------------------------
-
-  if (
-    (now - prevLastChange >= DEBOUNCE_TIME) &&
-    prevStableState != prevRawState
-  ) {
-
-    prevStableState =
-      prevRawState;
-  }
-
-  // ---------------------------------------------------
-  // Confirm stable NEXT state
-  // ---------------------------------------------------
-
-  if (
-    (now - nextLastChange >= DEBOUNCE_TIME) &&
-    nextStableState != nextRawState
-  ) {
-
-    nextStableState =
-      nextRawState;
-  }
-
-  // ---------------------------------------------------
-  // BOTH BUTTONS PRESSED
-  // ---------------------------------------------------
-
-  if (
-    prevStableState == LOW &&
-    nextStableState == LOW
-  ) {
-
-    if (!bothHandled) {
-
-      bothHandled = true;
-
-      Serial.println(
-        "BOTH BUTTONS PRESSED"
-      );
-
-      // Only accept if there is a job
-      if (
-        deviceState ==
-        JOB_REQUESTED
-      ) {
-
-        Serial.println(
-          "ACCEPTING JOB"
-        );
-
-        acceptJob();
-
-      } else {
-
-        showConfirmation();
-      }
-    }
-
-    return;
-  }
-
-  // ---------------------------------------------------
-  // BOTH BUTTONS RELEASED
-  // ---------------------------------------------------
-
-  if (
-    prevStableState == HIGH &&
-    nextStableState == HIGH
-  ) {
-
-    bothHandled = false;
-
-    return;
-  }
-
-  // ---------------------------------------------------
-  // PREVIOUS BUTTON
-  // ---------------------------------------------------
-
-  if (
-    prevStableState == LOW &&
-    nextStableState == HIGH &&
-    !bothHandled
-  ) {
-
-    currentPage--;
-
-    if (currentPage < 0) {
-
-      currentPage =
-        TOTAL_PAGES - 1;
-    }
-
-    Serial.print(
-      "PAGE: "
-    );
-
-    Serial.println(
-      currentPage + 1
-    );
-
-    showPage(
-      currentPage
-    );
-
-    // Wait for physical release
-    while (
-      digitalRead(
-        BUTTON_PREV_PIN
-      ) == LOW
-    ) {
-
-      delay(5);
-    }
-
-    // Reset debounce state
-    prevRawState = HIGH;
-    prevStableState = HIGH;
-    prevLastChange = millis();
-
-    return;
-  }
-
-  // ---------------------------------------------------
-  // NEXT BUTTON
-  // ---------------------------------------------------
-
-  if (
-    nextStableState == LOW &&
-    prevStableState == HIGH &&
-    !bothHandled
-  ) {
-
-    currentPage++;
-
-    if (
-      currentPage >=
-      TOTAL_PAGES
-    ) {
-
-      currentPage = 0;
-    }
-
-    Serial.print(
-      "PAGE: "
-    );
-
-    Serial.println(
-      currentPage + 1
-    );
-
-    showPage(
-      currentPage
-    );
-
-    // Wait for physical release
-    while (
-      digitalRead(
-        BUTTON_NEXT_PIN
-      ) == LOW
-    ) {
-
-      delay(5);
-    }
-
-    // Reset debounce state
-    nextRawState = HIGH;
-    nextStableState = HIGH;
-    nextLastChange = millis();
-
-    return;
-  }
-}
-
-// =====================================================
-// JOB REQUEST
-// =====================================================
-
-void requestJob() {
-
-  deviceState =
-    JOB_REQUESTED;
-
-  Serial.println(
-    "NEW JOB REQUEST!"
-  );
-
-  // Red ON
-  digitalWrite(
-    GREEN_LED_PIN,
-    LOW
-  );
-
-  digitalWrite(
-    RED_LED_PIN,
-    HIGH
-  );
-
-  // Buzzer
   digitalWrite(
     BUZZER_PIN,
     HIGH
   );
 
-  delay(250);
+  delay(80);
 
   digitalWrite(
     BUZZER_PIN,
     LOW
-  );
-
-  showJobRequest();
-}
-
-// =====================================================
-// ACCEPT JOB
-// =====================================================
-
-void acceptJob() {
-
-  Serial.println(
-    "ACCEPTING JOB..."
-  );
-
-  deviceState =
-    JOB_ACCEPTED;
-
-  // Green ON
-  digitalWrite(
-    GREEN_LED_PIN,
-    HIGH
-  );
-
-  // Red OFF
-  digitalWrite(
-    RED_LED_PIN,
-    LOW
-  );
-
-  // Confirmation beep
-  digitalWrite(
-    BUZZER_PIN,
-    HIGH
-  );
-
-  delay(120);
-
-  digitalWrite(
-    BUZZER_PIN,
-    LOW
-  );
-
-  showJobAccepted();
-
-  // ---------------------------------------------------
-  // Tell backend
-  // ---------------------------------------------------
-
-  sendHeartbeat(
-    "JOB_ACCEPTED"
-  );
-
-  delay(1500);
-
-  showPage(
-    currentPage
   );
 }
 
 // =====================================================
-// HEARTBEAT / STATE UPDATE
+// ACCEPTED BEEP
 // =====================================================
 
-void sendHeartbeat(
-  String state
-) {
+void beepAccepted() {
 
-  if (
-    WiFi.status() !=
-    WL_CONNECTED
-  ) {
+  beepShort();
 
-    Serial.println(
-      "Cannot send heartbeat - WiFi offline"
-    );
+  delay(100);
 
-    return;
-  }
-
-  WiFiClientSecure client;
-
-  client.setInsecure();
-
-  HTTPClient http;
-
-  String url =
-    String(API_BASE) +
-    "/hardware/device/" +
-    DEVICE_CODE +
-    "/heartbeat";
-
-  Serial.println(
-    "Sending heartbeat:"
-  );
-
-  Serial.println(url);
-
-  if (!http.begin(
-        client,
-        url
-      )) {
-
-    Serial.println(
-      "Heartbeat connection failed"
-    );
-
-    return;
-  }
-
-  http.addHeader(
-    "X-Device-Code",
-    DEVICE_CODE
-  );
-
-  http.addHeader(
-    "X-Device-Key",
-    DEVICE_KEY
-  );
-
-  http.addHeader(
-    "Content-Type",
-    "application/json"
-  );
-
-  String body =
-    "{\"state\":\"" +
-    state +
-    "\"}";
-
-  int httpCode =
-    http.POST(body);
-
-  Serial.print(
-    "Heartbeat HTTP: "
-  );
-
-  Serial.println(
-    httpCode
-  );
-
-  Serial.println(
-    http.getString()
-  );
-
-  http.end();
-}
-
-// =====================================================
-// AVAILABLE
-// =====================================================
-
-void setAvailable() {
-
-  deviceState =
-    AVAILABLE;
-
-  digitalWrite(
-    GREEN_LED_PIN,
-    HIGH
-  );
-
-  digitalWrite(
-    RED_LED_PIN,
-    LOW
-  );
-
-  digitalWrite(
-    BUZZER_PIN,
-    LOW
-  );
+  beepShort();
 }
 
 // =====================================================
@@ -969,7 +357,7 @@ void showStartup() {
 
   display.setCursor(
     25,
-    30
+    32
   );
 
   display.println(
@@ -977,8 +365,8 @@ void showStartup() {
   );
 
   display.setCursor(
-    45,
-    45
+    43,
+    48
   );
 
   display.println(
@@ -989,386 +377,406 @@ void showStartup() {
 }
 
 // =====================================================
-// NORMAL PAGES
+// PAGE 1 - WORKER PROFILE
 // =====================================================
 
-void showPage(
-  int page
-) {
+void showWorkerProfile() {
 
   display.clearDisplay();
 
-  // ===================================================
-  // PAGE 1 - WORKER PROFILE
-  // ===================================================
+  display.setTextSize(1);
 
-  if (page == 0) {
+  display.setCursor(
+    0,
+    0
+  );
 
-    display.setTextSize(1);
+  display.println(
+    "WORKER PROFILE"
+  );
 
-    display.setCursor(
-      0,
-      0
-    );
+  display.drawLine(
+    0,
+    10,
+    127,
+    10,
+    SSD1306_WHITE
+  );
+
+  display.setTextSize(2);
+
+  display.setCursor(
+    15,
+    18
+  );
+
+  display.println(
+    "KUMAR M."
+  );
+
+  display.setTextSize(1);
+
+  display.setCursor(
+    20,
+    42
+  );
+
+  display.println(
+    "Worker: WRK-001"
+  );
+
+  display.setCursor(
+    20,
+    54
+  );
+
+  display.println(
+    "Device: DEV-001"
+  );
+
+  display.display();
+}
+
+// =====================================================
+// PAGE 2 - DEVICE STATUS
+// =====================================================
+
+void showDeviceStatus() {
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(
+    0,
+    0
+  );
+
+  display.println(
+    "DEVICE STATUS"
+  );
+
+  display.drawLine(
+    0,
+    10,
+    127,
+    10,
+    SSD1306_WHITE
+  );
+
+  display.setTextSize(2);
+
+  display.setCursor(
+    25,
+    17
+  );
+
+  if (
+    WiFi.status() == WL_CONNECTED
+  ) {
 
     display.println(
-      "WORKER PROFILE"
+      "ONLINE"
     );
 
-    display.drawLine(
-      0,
-      10,
-      127,
-      10,
-      SSD1306_WHITE
-    );
-
-    display.setTextSize(2);
-
-    display.setCursor(
-      15,
-      18
-    );
+  } else {
 
     display.println(
-      "KUMAR M."
-    );
-
-    display.setTextSize(1);
-
-    display.setCursor(
-      20,
-      42
-    );
-
-    display.println(
-      "Worker: WRK-001"
-    );
-
-    display.setCursor(
-      20,
-      54
-    );
-
-    display.println(
-      "Device: DEV-001"
+      "OFFLINE"
     );
   }
 
-  // ===================================================
-  // PAGE 2 - DEVICE STATUS
-  // ===================================================
+  display.setTextSize(1);
 
-  else if (page == 1) {
+  display.setCursor(
+    20,
+    42
+  );
 
-    display.setTextSize(1);
+  display.println(
+    "DEV-001"
+  );
 
-    display.setCursor(
-      0,
-      0
-    );
+  display.setCursor(
+    20,
+    54
+  );
+
+  display.println(
+    "ESP32 MODULE"
+  );
+
+  display.display();
+}
+
+// =====================================================
+// PAGE 3 - SAFETY STATUS
+// =====================================================
+
+void showSafetyStatus() {
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(
+    0,
+    0
+  );
+
+  display.println(
+    "SAFETY STATUS"
+  );
+
+  display.drawLine(
+    0,
+    10,
+    127,
+    10,
+    SSD1306_WHITE
+  );
+
+  display.setTextSize(2);
+
+  display.setCursor(
+    40,
+    18
+  );
+
+  display.println(
+    "SAFE"
+  );
+
+  display.setTextSize(1);
+
+  display.setCursor(
+    15,
+    43
+  );
+
+  display.println(
+    "Safety module active"
+  );
+
+  display.setCursor(
+    25,
+    55
+  );
+
+  display.println(
+    "System OK"
+  );
+
+  display.display();
+}
+
+// =====================================================
+// PAGE 4 - WORK STATUS
+// =====================================================
+
+void showWorkStatus() {
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(
+    0,
+    0
+  );
+
+  display.println(
+    "WORK STATUS"
+  );
+
+  display.drawLine(
+    0,
+    10,
+    127,
+    10,
+    SSD1306_WHITE
+  );
+
+  display.setTextSize(2);
+
+  display.setCursor(
+    25,
+    18
+  );
+
+  if (
+    deviceState == JOB_ACCEPTED
+  ) {
 
     display.println(
-      "DEVICE STATUS"
+      "ACTIVE"
     );
 
-    display.drawLine(
-      0,
-      10,
-      127,
-      10,
-      SSD1306_WHITE
-    );
-
-    display.setTextSize(2);
-
-    display.setCursor(
-      25,
-      17
-    );
+  } else {
 
     display.println(
-      WiFi.status() ==
-      WL_CONNECTED
-        ? "ONLINE"
-        : "OFFLINE"
-    );
-
-    display.setTextSize(1);
-
-    display.setCursor(
-      20,
-      42
-    );
-
-    display.println(
-      "DEV-001"
-    );
-
-    display.setCursor(
-      20,
-      54
-    );
-
-    display.println(
-      "ESP32 MODULE"
+      "READY"
     );
   }
 
-  // ===================================================
-  // PAGE 3 - SAFETY STATUS
-  // ===================================================
+  display.setTextSize(1);
 
-  else if (page == 2) {
+  display.setCursor(
+    18,
+    43
+  );
 
-    display.setTextSize(1);
-
-    display.setCursor(
-      0,
-      0
-    );
+  if (
+    deviceState == JOB_ACCEPTED
+  ) {
 
     display.println(
-      "SAFETY STATUS"
+      "Job accepted"
     );
 
-    display.drawLine(
-      0,
-      10,
-      127,
-      10,
-      SSD1306_WHITE
+  } else {
+
+    display.println(
+      "Waiting for job"
     );
-
-    display.setTextSize(2);
-
-    if (
-      deviceState ==
-      JOB_REQUESTED
-    ) {
-
-      display.setCursor(
-        25,
-        18
-      );
-
-      display.println(
-        "ALERT"
-      );
-
-      display.setTextSize(1);
-
-      display.setCursor(
-        15,
-        43
-      );
-
-      display.println(
-        "Job requested"
-      );
-
-      display.setCursor(
-        18,
-        55
-      );
-
-      display.println(
-        "B1+B2 = ACCEPT"
-      );
-
-    } else {
-
-      display.setCursor(
-        40,
-        18
-      );
-
-      display.println(
-        "SAFE"
-      );
-
-      display.setTextSize(1);
-
-      display.setCursor(
-        17,
-        43
-      );
-
-      display.println(
-        "No active alerts"
-      );
-
-      display.setCursor(
-        22,
-        55
-      );
-
-      display.println(
-        "System OK"
-      );
-    }
   }
 
-  // ===================================================
-  // PAGE 4 - WORK STATUS
-  // ===================================================
+  display.setCursor(
+    18,
+    55
+  );
 
-  else if (page == 3) {
-
-    display.setTextSize(1);
-
-    display.setCursor(
-      0,
-      0
-    );
+  if (
+    deviceState == JOB_ACCEPTED
+  ) {
 
     display.println(
-      "WORK STATUS"
+      "Work in progress"
     );
 
-    display.drawLine(
-      0,
-      10,
-      127,
-      10,
-      SSD1306_WHITE
-    );
-
-    display.setTextSize(2);
-
-    if (
-      deviceState ==
-      JOB_ACCEPTED
-    ) {
-
-      display.setCursor(
-        30,
-        18
-      );
-
-      display.println(
-        "ACTIVE"
-      );
-
-      display.setTextSize(1);
-
-      display.setCursor(
-        15,
-        43
-      );
-
-      display.println(
-        "Job accepted"
-      );
-
-      display.setCursor(
-        25,
-        55
-      );
-
-      display.println(
-        "Work in progress"
-      );
-
-    } else {
-
-      display.setCursor(
-        30,
-        18
-      );
-
-      display.println(
-        "READY"
-      );
-
-      display.setTextSize(1);
-
-      display.setCursor(
-        20,
-        43
-      );
-
-      display.println(
-        "Waiting for job"
-      );
-
-      display.setCursor(
-        25,
-        55
-      );
-
-      display.println(
-        "Worker ready"
-      );
-    }
-  }
-
-  // ===================================================
-  // PAGE 5 - DEVICE INFO
-  // ===================================================
-
-  else if (page == 4) {
-
-    display.setTextSize(1);
-
-    display.setCursor(
-      0,
-      0
-    );
+  } else {
 
     display.println(
-      "DEVICE INFO"
-    );
-
-    display.drawLine(
-      0,
-      10,
-      127,
-      10,
-      SSD1306_WHITE
-    );
-
-    display.setCursor(
-      10,
-      18
-    );
-
-    display.println(
-      "ID: DEV-001"
-    );
-
-    display.setCursor(
-      10,
-      30
-    );
-
-    display.println(
-      "MCU: ESP32"
-    );
-
-    display.setCursor(
-      10,
-      42
-    );
-
-    display.println(
-      WiFi.status() ==
-      WL_CONNECTED
-        ? "WiFi: CONNECTED"
-        : "WiFi: OFFLINE"
-    );
-
-    display.setCursor(
-      10,
-      54
-    );
-
-    display.println(
-      "Server: API"
+      "Worker ready"
     );
   }
 
   display.display();
+}
+
+// =====================================================
+// PAGE 5 - DEVICE INFO
+// =====================================================
+
+void showDeviceInfo() {
+
+  display.clearDisplay();
+
+  display.setTextSize(1);
+
+  display.setCursor(
+    0,
+    0
+  );
+
+  display.println(
+    "DEVICE INFO"
+  );
+
+  display.drawLine(
+    0,
+    10,
+    127,
+    10,
+    SSD1306_WHITE
+  );
+
+  display.setCursor(
+    10,
+    18
+  );
+
+  display.println(
+    "ID: DEV-001"
+  );
+
+  display.setCursor(
+    10,
+    30
+  );
+
+  display.println(
+    "MCU: ESP32"
+  );
+
+  display.setCursor(
+    10,
+    42
+  );
+
+  if (
+    WiFi.status() == WL_CONNECTED
+  ) {
+
+    display.println(
+      "WiFi: CONNECTED"
+    );
+
+  } else {
+
+    display.println(
+      "WiFi: OFFLINE"
+    );
+  }
+
+  display.setCursor(
+    10,
+    54
+  );
+
+  display.println(
+    "CO-OP OS MODULE"
+  );
+
+  display.display();
+}
+
+// =====================================================
+// SHOW CURRENT PAGE
+// =====================================================
+
+void showCurrentPage() {
+
+  switch (currentPage) {
+
+    case 0:
+      showWorkerProfile();
+      break;
+
+    case 1:
+      showDeviceStatus();
+      break;
+
+    case 2:
+      showSafetyStatus();
+      break;
+
+    case 3:
+      showWorkStatus();
+      break;
+
+    case 4:
+      showDeviceInfo();
+      break;
+
+    default:
+
+      currentPage = 0;
+
+      showWorkerProfile();
+
+      break;
+  }
 }
 
 // =====================================================
@@ -1399,7 +807,7 @@ void showJobRequest() {
   );
 
   display.setCursor(
-    10,
+    8,
     17
   );
 
@@ -1410,7 +818,7 @@ void showJobRequest() {
   display.setTextSize(2);
 
   display.setCursor(
-    28,
+    25,
     27
   );
 
@@ -1422,7 +830,7 @@ void showJobRequest() {
 
   display.setCursor(
     18,
-    47
+    45
   );
 
   display.println(
@@ -1430,22 +838,22 @@ void showJobRequest() {
   );
 
   display.setCursor(
-    18,
+    2,
     57
   );
 
   display.println(
-    "B1+B2 = ACCEPT"
+    "B1 Reject  B1+B2 Accept"
   );
 
   display.display();
 }
 
 // =====================================================
-// JOB ACCEPTED SCREEN
+// ACCEPTED SCREEN
 // =====================================================
 
-void showJobAccepted() {
+void showAccepted() {
 
   display.clearDisplay();
 
@@ -1453,7 +861,7 @@ void showJobAccepted() {
 
   display.setCursor(
     15,
-    5
+    7
   );
 
   display.println(
@@ -1462,9 +870,9 @@ void showJobAccepted() {
 
   display.drawLine(
     0,
-    28,
+    29,
     127,
-    28,
+    29,
     SSD1306_WHITE
   );
 
@@ -1472,77 +880,694 @@ void showJobAccepted() {
 
   display.setCursor(
     20,
-    36
+    39
   );
 
   display.println(
-    "KUMAR M."
+    "Job confirmed"
   );
 
   display.setCursor(
     20,
-    48
+    52
   );
 
   display.println(
-    "STATUS: ACTIVE"
-  );
-
-  display.setCursor(
-    20,
-    59
-  );
-
-  display.println(
-    "DEV-001"
+    "Status: ACTIVE"
   );
 
   display.display();
 }
 
 // =====================================================
-// CONFIRMATION
+// REJECTED SCREEN
 // =====================================================
 
-void showConfirmation() {
+void showRejected() {
 
   display.clearDisplay();
 
   display.setTextSize(2);
 
   display.setCursor(
-    25,
-    5
+    15,
+    7
   );
 
   display.println(
-    "CONFIRM"
+    "REJECTED"
   );
 
   display.drawLine(
     0,
-    28,
+    29,
     127,
-    28,
+    29,
     SSD1306_WHITE
   );
 
   display.setTextSize(1);
 
   display.setCursor(
-    18,
+    28,
     40
   );
 
   display.println(
-    "No pending job"
+    "JOB RESET"
+  );
+
+  display.setCursor(
+    17,
+    53
+  );
+
+  display.println(
+    "Returning..."
   );
 
   display.display();
+}
 
-  delay(800);
+// =====================================================
+// ACCEPT JOB
+// =====================================================
 
-  showPage(
-    currentPage
+void acceptJob() {
+
+  Serial.println();
+  Serial.println(
+    "================================"
+  );
+  Serial.println(
+    "JOB ACCEPTED BY WORKER"
+  );
+  Serial.println(
+    "================================"
+  );
+
+  deviceState =
+    JOB_ACCEPTED;
+
+  jobRequestAlerted =
+    false;
+
+  updateLEDs();
+
+  showAccepted();
+
+  // Confirmation sound
+  beepAccepted();
+
+  // Tell backend
+  sendHeartbeat(
+    "JOB_ACCEPTED"
+  );
+
+  delay(1200);
+
+  // Return to same page
+  showCurrentPage();
+}
+
+// =====================================================
+// REJECT JOB
+// =====================================================
+
+void rejectJob() {
+
+  Serial.println();
+  Serial.println(
+    "================================"
+  );
+  Serial.println(
+    "JOB REJECTED / RESET"
+  );
+  Serial.println(
+    "================================"
+  );
+
+  deviceState =
+    AVAILABLE;
+
+  jobRequestAlerted =
+    false;
+
+  updateLEDs();
+
+  showRejected();
+
+  // Button/reject sound
+  beepShort();
+
+  // Tell backend
+  sendHeartbeat(
+    "AVAILABLE"
+  );
+
+  delay(1200);
+
+  // Return to same page
+  showCurrentPage();
+}
+
+// =====================================================
+// BUTTON HANDLING
+// =====================================================
+
+void handleButtons() {
+
+  bool button1 =
+    digitalRead(
+      BUTTON_PREV_PIN
+    );
+
+  bool button2 =
+    digitalRead(
+      BUTTON_NEXT_PIN
+    );
+
+  unsigned long now =
+    millis();
+
+  bool button1Pressed =
+    (
+      lastButton1State == HIGH &&
+      button1 == LOW
+    );
+
+  bool button2Pressed =
+    (
+      lastButton2State == HIGH &&
+      button2 == LOW
+    );
+
+  // ===================================================
+  // JOB REQUEST MODE
+  // ===================================================
+
+  if (
+    deviceState ==
+    JOB_REQUESTED
+  ) {
+
+    // -------------------------------------------------
+    // BOTH BUTTONS = ACCEPT
+    // -------------------------------------------------
+
+    if (
+      button1 == LOW &&
+      button2 == LOW
+    ) {
+
+      if (
+        now - lastButton1Time >
+        DEBOUNCE_TIME
+      ) {
+
+        lastButton1Time = now;
+        lastButton2Time = now;
+
+        // Button feedback
+        beepShort();
+
+        acceptJob();
+      }
+
+      lastButton1State = button1;
+      lastButton2State = button2;
+
+      return;
+    }
+
+    // -------------------------------------------------
+    // B1 = REJECT
+    // -------------------------------------------------
+
+    if (
+      button1Pressed
+    ) {
+
+      if (
+        now - lastButton1Time >
+        DEBOUNCE_TIME
+      ) {
+
+        lastButton1Time = now;
+
+        // Button feedback
+        beepShort();
+
+        rejectJob();
+      }
+
+      lastButton1State = button1;
+      lastButton2State = button2;
+
+      return;
+    }
+
+    // -------------------------------------------------
+    // B2 ALONE = NO ACTION
+    // -------------------------------------------------
+
+    lastButton1State = button1;
+    lastButton2State = button2;
+
+    return;
+  }
+
+  // ===================================================
+  // NORMAL PAGE NAVIGATION
+  // ===================================================
+
+  // ---------------------------------------------------
+  // B1 = PREVIOUS PAGE
+  // ---------------------------------------------------
+
+  if (
+    button1Pressed
+  ) {
+
+    if (
+      now - lastButton1Time >
+      DEBOUNCE_TIME
+    ) {
+
+      lastButton1Time = now;
+
+      // Button feedback
+      beepShort();
+
+      currentPage--;
+
+      if (
+        currentPage < 0
+      ) {
+
+        currentPage =
+          TOTAL_PAGES - 1;
+      }
+
+      Serial.print(
+        "Previous page: "
+      );
+
+      Serial.println(
+        currentPage + 1
+      );
+
+      showCurrentPage();
+    }
+  }
+
+  // ---------------------------------------------------
+  // B2 = NEXT PAGE
+  // ---------------------------------------------------
+
+  if (
+    button2Pressed
+  ) {
+
+    if (
+      now - lastButton2Time >
+      DEBOUNCE_TIME
+    ) {
+
+      lastButton2Time = now;
+
+      // Button feedback
+      beepShort();
+
+      currentPage++;
+
+      if (
+        currentPage >= TOTAL_PAGES
+      ) {
+
+        currentPage = 0;
+      }
+
+      Serial.print(
+        "Next page: "
+      );
+
+      Serial.println(
+        currentPage + 1
+      );
+
+      showCurrentPage();
+    }
+  }
+
+  // ---------------------------------------------------
+  // SAVE BUTTON STATES
+  // ---------------------------------------------------
+
+  lastButton1State = button1;
+  lastButton2State = button2;
+}
+
+// =====================================================
+// POLL BACKEND
+// =====================================================
+
+void pollBackend() {
+
+  if (
+    WiFi.status() !=
+    WL_CONNECTED
+  ) {
+
+    Serial.println(
+      "WiFi disconnected."
+    );
+
+    connectWiFi();
+
+    return;
+  }
+
+  WiFiClientSecure client;
+
+  // Prototype HTTPS
+  client.setInsecure();
+
+  HTTPClient http;
+
+  String url =
+    String(API_BASE) +
+    "/hardware/device/" +
+    DEVICE_CODE +
+    "/state";
+
+  Serial.println();
+  Serial.println(
+    "================================"
+  );
+
+  Serial.println(
+    "Polling backend"
+  );
+
+  Serial.println(
+    url
+  );
+
+  if (
+    !http.begin(
+      client,
+      url
+    )
+  ) {
+
+    Serial.println(
+      "ERROR: HTTP begin failed"
+    );
+
+    return;
+  }
+
+  // Device authentication
+  http.addHeader(
+    "X-Device-Code",
+    DEVICE_CODE
+  );
+
+  http.addHeader(
+    "X-Device-Key",
+    DEVICE_KEY
+  );
+
+  int httpCode =
+    http.GET();
+
+  Serial.print(
+    "HTTP Status: "
+  );
+
+  Serial.println(
+    httpCode
+  );
+
+  if (
+    httpCode == 200
+  ) {
+
+    String response =
+      http.getString();
+
+    Serial.println(
+      "Server response:"
+    );
+
+    Serial.println(
+      response
+    );
+
+    // ===============================================
+    // JOB REQUESTED
+    // ===============================================
+
+    if (
+      response.indexOf(
+        "JOB_REQUESTED"
+      ) >= 0
+    ) {
+
+      Serial.println(
+        ">>> JOB REQUEST RECEIVED <<<"
+      );
+
+      if (
+        deviceState !=
+        JOB_REQUESTED
+      ) {
+
+        deviceState =
+          JOB_REQUESTED;
+
+        jobRequestAlerted =
+          false;
+
+        updateLEDs();
+
+        showJobRequest();
+      }
+
+      // Alert only once
+      if (
+        !jobRequestAlerted
+      ) {
+
+        beepShort();
+
+        jobRequestAlerted =
+          true;
+      }
+    }
+
+    // ===============================================
+    // JOB ACCEPTED
+    // ===============================================
+
+    else if (
+      response.indexOf(
+        "JOB_ACCEPTED"
+      ) >= 0
+    ) {
+
+      Serial.println(
+        ">>> JOB ACCEPTED STATE <<<"
+      );
+
+      if (
+        deviceState !=
+        JOB_ACCEPTED
+      ) {
+
+        deviceState =
+          JOB_ACCEPTED;
+
+        jobRequestAlerted =
+          false;
+
+        updateLEDs();
+
+        showAccepted();
+      }
+    }
+
+    // ===============================================
+    // AVAILABLE
+    // ===============================================
+
+    else if (
+      response.indexOf(
+        "AVAILABLE"
+      ) >= 0
+    ) {
+
+      Serial.println(
+        ">>> DEVICE AVAILABLE <<<"
+      );
+
+      if (
+        deviceState !=
+        AVAILABLE
+      ) {
+
+        deviceState =
+          AVAILABLE;
+
+        jobRequestAlerted =
+          false;
+
+        updateLEDs();
+
+        showCurrentPage();
+      }
+    }
+
+    else {
+
+      Serial.println(
+        "No recognized hardware state."
+      );
+    }
+  }
+
+  else {
+
+    Serial.print(
+      "Backend request failed: "
+    );
+
+    Serial.println(
+      httpCode
+    );
+
+    String errorResponse =
+      http.getString();
+
+    Serial.println(
+      errorResponse
+    );
+  }
+
+  http.end();
+}
+
+// =====================================================
+// SEND HEARTBEAT
+// =====================================================
+
+bool sendHeartbeat(
+  const char* state
+) {
+
+  if (
+    WiFi.status() !=
+    WL_CONNECTED
+  ) {
+
+    Serial.println(
+      "Cannot send heartbeat - WiFi offline"
+    );
+
+    return false;
+  }
+
+  WiFiClientSecure client;
+
+  // Prototype HTTPS
+  client.setInsecure();
+
+  HTTPClient http;
+
+  String url =
+    String(API_BASE) +
+    "/hardware/device/" +
+    DEVICE_CODE +
+    "/heartbeat";
+
+  Serial.println();
+  Serial.println(
+    "Sending heartbeat"
+  );
+
+  Serial.println(
+    url
+  );
+
+  if (
+    !http.begin(
+      client,
+      url
+    )
+  ) {
+
+    Serial.println(
+      "ERROR: HTTP begin failed"
+    );
+
+    return false;
+  }
+
+  http.addHeader(
+    "Content-Type",
+    "application/json"
+  );
+
+  http.addHeader(
+    "X-Device-Code",
+    DEVICE_CODE
+  );
+
+  http.addHeader(
+    "X-Device-Key",
+    DEVICE_KEY
+  );
+
+  String body =
+    "{\"state\":\"" +
+    String(state) +
+    "\"}";
+
+  Serial.print(
+    "Heartbeat body: "
+  );
+
+  Serial.println(
+    body
+  );
+
+  int httpCode =
+    http.POST(body);
+
+  Serial.print(
+    "Heartbeat HTTP Status: "
+  );
+
+  Serial.println(
+    httpCode
+  );
+
+  String response =
+    http.getString();
+
+  Serial.println(
+    "Heartbeat response:"
+  );
+
+  Serial.println(
+    response
+  );
+
+  http.end();
+
+  return (
+    httpCode >= 200 &&
+    httpCode < 300
   );
 }
